@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Röchling | Action Plans - Multi-Device Sync</title>
+  <title>Röchling | Action Plans - Before & After Evidence</title>
   
   <!-- Firebase SDK -->
   <script type="module">
@@ -32,54 +32,253 @@
     window.query = query;
     window.orderBy = orderBy;
     
-    console.log("Firebase connected - Multi-device sync ready!");
+    console.log("✅ Firebase connected!");
   </script>
   
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     :root {
-      --primary: #0A2B4E; --primary-dark: #061E38; --accent: #2D7A4B;
-      --warning: #E67E22; --danger: #C0392B; --info: #3498DB;
-      --gray-100: #F1F3F5; --gray-200: #E9ECEF; --gray-300: #DEE2E6;
-      --gray-500: #ADB5BD; --gray-600: #6C757D; --gray-800: #343A40;
+      --primary: #0A2B4E;
+      --primary-dark: #061E38;
+      --primary-light: #1A4A7A;
+      --accent: #2D7A4B;
+      --warning: #E67E22;
+      --danger: #C0392B;
+      --info: #3498DB;
+      --gray-50: #F8F9FA;
+      --gray-100: #F1F3F5;
+      --gray-200: #E9ECEF;
+      --gray-300: #DEE2E6;
+      --gray-400: #CED4DA;
+      --gray-500: #ADB5BD;
+      --gray-600: #6C757D;
+      --gray-700: #495057;
+      --gray-800: #343A40;
       --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
       --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--gray-100); color: var(--gray-800); }
-    .app-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-md); }
-    .header-container { max-width: 1400px; margin: 0 auto; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-    .logo-area { display: flex; align-items: center; gap: 1rem; }
-    .logo-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.5;
+    }
+
+    .app-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .logo-icon svg { width: 28px; height: 28px; stroke: white; fill: none; }
+
     .logo-text h1 { font-size: 1.5rem; font-weight: 700; }
     .logo-text p { font-size: 0.75rem; opacity: 0.8; }
-    .sync-status { background: var(--accent); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; display: flex; align-items: center; gap: 0.5rem; }
-    .btn-primary { background: white; color: var(--primary); border: none; padding: 0.625rem 1.25rem; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.1);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+    }
+    .sync-status.online { background: var(--accent); }
+    .sync-status.offline { background: var(--danger); }
+
+    .btn-primary {
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 0.625rem 1.25rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
     .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .main-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { background: white; border-radius: 16px; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow); }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: var(--shadow);
+    }
+
     .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
     .stat-info h3 { font-size: 0.75rem; color: var(--gray-600); margin-bottom: 0.25rem; }
     .stat-number { font-size: 1.75rem; font-weight: 700; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-    .stat-icon.blue { background: #EBF5FB; } .stat-icon.orange { background: #FEF5E7; }
-    .stat-icon.green { background: #E6F4EA; } .stat-icon.red { background: #FDEDEC; }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-icon.blue { background: #EBF5FB; }
+    .stat-icon.orange { background: #FEF5E7; }
+    .stat-icon.green { background: #E6F4EA; }
+    .stat-icon.red { background: #FDEDEC; }
     .stat-icon.purple { background: #F4ECF7; }
     .stat-icon svg { width: 24px; height: 24px; }
-    .tabs-container { background: white; border-radius: 12px; padding: 0.25rem; margin-bottom: 1.5rem; display: inline-flex; gap: 0.25rem; box-shadow: var(--shadow); }
-    .tab-btn { padding: 0.625rem 1.25rem; border: none; background: transparent; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; color: var(--gray-600); }
-    .tab-btn.active { background: var(--primary); color: white; }
-    .filter-bar { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
-    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+
+    /* Tabs */
+    .tabs-container {
+      background: white;
+      border-radius: 12px;
+      padding: 0.25rem;
+      margin-bottom: 1.5rem;
+      display: inline-flex;
+      gap: 0.25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .tab-btn {
+      padding: 0.625rem 1.25rem;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--gray-600);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
     .filter-group label { font-size: 0.7rem; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 0.25rem; }
-    .filter-group input, .filter-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 0.875rem; }
-    .table-container { background: white; border-radius: 12px; overflow-x: auto; box-shadow: var(--shadow); }
-    .data-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-    .data-table th { padding: 0.75rem 1rem; text-align: left; font-size: 0.7rem; font-weight: 700; color: var(--gray-600); border-bottom: 1px solid var(--gray-200); }
-    .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-200); font-size: 0.8rem; vertical-align: middle; }
-    .data-table tr:hover { background: var(--gray-100); }
-    .badge { display: inline-flex; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+    .filter-group input, .filter-group select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 0.875rem;
+    }
+
+    /* Table */
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      overflow-x: auto;
+      box-shadow: var(--shadow);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+    }
+
+    .data-table th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--gray-600);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 0.8rem;
+      vertical-align: middle;
+    }
+
+    .data-table tr:hover { background: var(--gray-50); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
     .badge-topic { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
     .badge-pending { background: #FEF5E7; color: #E67E22; }
     .badge-progress { background: #EBF5FB; color: #3498DB; }
@@ -88,52 +287,276 @@
     .badge-high { background: #FDEDEC; color: #C0392B; }
     .badge-medium { background: #FEF5E7; color: #E67E22; }
     .badge-low { background: #E6F4EA; color: #2D7A4B; }
-    .image-preview { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; cursor: pointer; border: 1px solid var(--gray-300); }
-    .image-preview:hover { transform: scale(1.05); }
+
+    /* Before/After Gallery */
+    .comparison-gallery {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .comparison-item {
+      text-align: center;
+      cursor: pointer;
+    }
+    .comparison-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .comparison-label.before { color: var(--warning); }
+    .comparison-label.after { color: var(--accent); }
+    .comparison-thumb {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid var(--gray-300);
+      transition: all 0.2s;
+    }
+    .comparison-thumb:hover {
+      transform: scale(1.05);
+      border-color: var(--primary);
+    }
+    .badge-evidence {
+      background: var(--info);
+      color: white;
+      font-size: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 10px;
+    }
+
+    /* Action Buttons */
     .action-buttons { display: flex; gap: 0.25rem; opacity: 0.6; }
     .data-table tr:hover .action-buttons { opacity: 1; }
-    .action-btn { padding: 0.25rem; border: none; background: transparent; cursor: pointer; border-radius: 4px; font-size: 1rem; }
+    .action-btn {
+      padding: 0.25rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+    }
     .action-btn:hover { background: var(--gray-200); }
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; }
-    .chart-card { background: white; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow); }
-    .chart-title { font-size: 0.875rem; font-weight: 700; margin-bottom: 1rem; }
-    .donut-container { display: flex; justify-content: center; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+    /* Charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1rem;
+    }
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .chart-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .donut-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
     .legend { display: flex; flex-direction: column; gap: 0.5rem; }
-    .legend-item { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 8px; }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+    }
     .legend-item:hover { background: var(--gray-100); }
     .legend-color { width: 12px; height: 12px; border-radius: 50%; }
     .bar-item { cursor: pointer; margin-bottom: 0.75rem; }
     .bar-label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem; }
     .progress-bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
     .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
     .modal-overlay.active { display: flex; }
-    .modal-content { background: white; border-radius: 16px; width: 90%; max-width: 900px; max-height: 85vh; overflow-y: auto; }
-    .modal-header { padding: 1rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; background: var(--primary); color: white; border-radius: 16px 16px 0 0; position: sticky; top: 0; }
-    .close-modal { background: rgba(255,255,255,0.2); border: none; border-radius: 8px; padding: 0.25rem 0.5rem; cursor: pointer; color: white; font-size: 1.2rem; }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--primary);
+      color: white;
+      border-radius: 16px 16px 0 0;
+      position: sticky;
+      top: 0;
+    }
+    .close-modal {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 8px;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      color: white;
+    }
     .modal-body { padding: 1.5rem; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
     .form-field.full-width { grid-column: 1 / -1; }
     .form-field label { font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem; }
-    .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 0.875rem; }
+    .form-field input, .form-field select, .form-field textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 0.875rem;
+    }
     .form-field textarea { min-height: 60px; resize: vertical; }
-    .image-upload-area { border: 2px dashed var(--gray-300); border-radius: 12px; padding: 1rem; margin-top: 0.5rem; }
-    .image-grid { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
-    .image-card { position: relative; width: 80px; }
-    .image-card img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; border: 2px solid var(--gray-300); }
-    .remove-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
-    .upload-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--gray-100); border-radius: 8px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem; }
-    .modal-footer { padding: 1rem; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 0.5rem; position: sticky; bottom: 0; background: white; }
-    .btn-secondary { padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; border-radius: 8px; cursor: pointer; }
-    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1100; }
+
+    /* Before/After Upload Sections */
+    .comparison-section {
+      border: 2px dashed var(--gray-300);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .comparison-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .comparison-title.before { color: var(--warning); }
+    .comparison-title.after { color: var(--accent); }
+    .image-grid {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+    .image-card {
+      position: relative;
+      width: 100px;
+    }
+    .image-card img {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid var(--gray-300);
+    }
+    .remove-img {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--gray-100);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      position: sticky;
+      bottom: 0;
+      background: white;
+    }
+    .btn-secondary {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--gray-300);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* Lightbox for full image */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
     .lightbox.active { display: flex; }
     .lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
-    .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
-    .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 40px;
+      cursor: pointer;
+    }
+
+    .empty-state { text-align: center; padding: 2rem; color: var(--gray-500); }
+    
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
     .loading-overlay.active { display: flex; }
-    .spinner { width: 50px; height: 50px; border: 4px solid var(--gray-300); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid var(--gray-300);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @media (max-width: 768px) { .header-container, .main-container { padding: 1rem; } .form-grid { grid-template-columns: 1fr; } }
+
+    @media (max-width: 768px) {
+      .header-container, .main-container { padding: 1rem; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -142,8 +565,10 @@
   <header class="app-header">
     <div class="header-container">
       <div class="logo-area">
-        <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
-        <div class="logo-text"><h1>Röchling</h1><p>Multi-Device Action Plans</p></div>
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <div class="logo-text"><h1>Röchling</h1><p>Before & After Evidence</p></div>
       </div>
       <div class="sync-status" id="syncStatus">🔄 Syncing...</div>
       <button class="btn-primary" id="btnNewPlan">+ New Action Plan</button>
@@ -151,19 +576,37 @@
   </header>
 
   <main class="main-container">
+    <!-- Stats -->
     <div class="stats-grid">
-      <div class="stat-card" onclick="applyFilter('clear')"><div><h3>Total Plans</h3><div class="stat-number" id="totalPlans">0</div></div><div class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div></div>
-      <div class="stat-card" onclick="applyFilter('status', 'open')"><div><h3>Open</h3><div class="stat-number" id="openPlans">0</div></div><div class="stat-icon orange"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div></div>
-      <div class="stat-card" onclick="applyFilter('status', 'concluido')"><div><h3>Completed</h3><div class="stat-number" id="completedPlans">0</div></div><div class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div></div>
-      <div class="stat-card" onclick="applyFilter('status', 'atrasado')"><div><h3>Overdue</h3><div class="stat-number" id="overduePlans">0</div></div><div class="stat-icon red"><svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div></div>
-      <div class="stat-card" onclick="applyFilter('evidence', 'has')"><div><h3>With Evidence</h3><div class="stat-number" id="evidenceCount">0</div></div><div class="stat-icon purple"><svg viewBox="0 0 24 24"><path d="M13.5 3H12H8C6.9 3 6 3.9 6 5v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8.5M13.5 3L19 8.5M13.5 3v5.5H19"/></svg></div></div>
+      <div class="stat-card" onclick="applyFilter('clear')">
+        <div><h3>Total Plans</h3><div class="stat-number" id="totalPlans">0</div></div>
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('status', 'open')">
+        <div><h3>Open</h3><div class="stat-number" id="openPlans">0</div></div>
+        <div class="stat-icon orange"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('status', 'concluido')">
+        <div><h3>Completed</h3><div class="stat-number" id="completedPlans">0</div></div>
+        <div class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('status', 'atrasado')">
+        <div><h3>Overdue</h3><div class="stat-number" id="overduePlans">0</div></div>
+        <div class="stat-icon red"><svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('evidence', 'has')">
+        <div><h3>With Evidence</h3><div class="stat-number" id="evidenceCount">0</div></div>
+        <div class="stat-icon purple"><svg viewBox="0 0 24 24"><path d="M13.5 3H12H8C6.9 3 6 3.9 6 5v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8.5M13.5 3L19 8.5M13.5 3v5.5H19"/></svg></div>
+      </div>
     </div>
 
+    <!-- Tabs -->
     <div class="tabs-container">
       <button class="tab-btn active" id="tabPlansBtn">📋 Plans</button>
       <button class="tab-btn" id="tabAnalyticsBtn">📊 Analytics</button>
     </div>
 
+    <!-- Plans Panel -->
     <div id="plansPanel">
       <div class="filter-bar">
         <div class="filter-grid">
@@ -176,12 +619,15 @@
 
       <div class="table-container">
         <table class="data-table">
-          <thead><tr><th>Topic</th><th>Item/Problem</th><th>Action</th><th>Responsible</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Images</th><th></th></tr></thead>
-          <tbody id="plansTableBody"><tr><td colspan="9" style="text-align:center;padding:2rem;">Loading plans from cloud...</td></tr></tbody>
+          <thead>
+            <tr><th>Topic</th><th>Item/Problem</th><th>Action</th><th>Responsible</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Before/After</th><th></th></tr>
+          </thead>
+          <tbody id="plansTableBody"><tr><td colspan="9" style="text-align:center;padding:2rem;">Loading from Firebase...</td></tr></tbody>
         </table>
       </div>
     </div>
 
+    <!-- Analytics Panel -->
     <div id="analyticsPanel" style="display: none;">
       <div class="charts-grid">
         <div class="chart-card"><div class="chart-title">📊 Status Distribution</div><div id="statusChart"></div></div>
@@ -192,8 +638,10 @@
     </div>
   </main>
 
+  <!-- Loading -->
   <div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div></div>
 
+  <!-- Plan Modal with Before/After -->
   <div id="planModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header"><h2 id="modalTitle">New Action Plan</h2><button class="close-modal" onclick="closeModal()">✕</button></div>
@@ -208,16 +656,24 @@
           <div class="form-field"><label>Priority</label><select id="priority"><option value="baixa">Low</option><option value="media" selected>Medium</option><option value="alta">High</option></select></div>
           <div class="form-field"><label>Status</label><select id="status"><option value="pendente">Pending</option><option value="em_andamento">In Progress</option><option value="concluido">Completed</option></select></div>
           <div class="form-field"><label>Deadline *</label><input type="date" id="deadline"></div>
-          <div class="form-field full-width">
-            <label>📸 Evidence Photos (max 5)</label>
-            <div class="image-upload-area">
-              <div class="upload-btn" onclick="document.getElementById('imageInput').click()">+ Upload Photos</div>
-              <input type="file" id="imageInput" multiple accept="image/*" style="display:none">
-              <div id="imageList" class="image-grid"></div>
-              <small style="color:gray;font-size:0.7rem;">⚠️ Photos will be saved in the cloud (max 1MB each recommended)</small>
-            </div>
-          </div>
         </div>
+
+        <!-- Before Section -->
+        <div class="comparison-section">
+          <div class="comparison-title before">📸 BEFORE (Problem Evidence)</div>
+          <div class="upload-btn" onclick="document.getElementById('beforeInput').click()">+ Upload Before Photos</div>
+          <input type="file" id="beforeInput" multiple accept="image/*" style="display:none">
+          <div id="beforeList" class="image-grid"></div>
+        </div>
+
+        <!-- After Section -->
+        <div class="comparison-section">
+          <div class="comparison-title after">✅ AFTER (Solution Evidence)</div>
+          <div class="upload-btn" onclick="document.getElementById('afterInput').click()">+ Upload After Photos</div>
+          <input type="file" id="afterInput" multiple accept="image/*" style="display:none">
+          <div id="afterList" class="image-grid"></div>
+        </div>
+
         <div id="formError" style="color:red;font-size:0.75rem;margin-top:0.5rem;display:none;"></div>
       </div>
       <div class="modal-footer">
@@ -227,6 +683,7 @@
     </div>
   </div>
 
+  <!-- Delete Modal -->
   <div id="deleteModal" class="modal-overlay">
     <div class="modal-content" style="max-width:350px;">
       <div class="modal-header" style="background:var(--danger);"><h2>Delete Plan</h2><button class="close-modal" onclick="closeDeleteModal()">✕</button></div>
@@ -235,14 +692,20 @@
     </div>
   </div>
 
-  <div id="lightbox" class="lightbox" onclick="closeLightbox()"><span class="lightbox-close">&times;</span><img id="lightboxImg" src=""></div>
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" src="">
+  </div>
 </div>
 
 <script type="module">
+  // Data
   let plans = [];
   let editId = null;
   let deleteId = null;
-  let imageFiles = []; // Store Base64 strings
+  let beforeFiles = [];
+  let afterFiles = [];
   let activeFilters = { topic: '', status: '', responsible: '', search: '' };
 
   const statusLabels = { pendente: 'Pending', em_andamento: 'In Progress', concluido: 'Completed', atrasado: 'Overdue' };
@@ -252,18 +715,19 @@
 
   function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
   function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
-  function updateSyncStatus(success) { 
+  
+  function updateSyncStatus(success) {
     const statusDiv = document.getElementById('syncStatus');
     if (success) {
       statusDiv.innerHTML = '✅ Synced';
-      statusDiv.style.background = 'var(--accent)';
+      statusDiv.className = 'sync-status online';
     } else {
       statusDiv.innerHTML = '⚠️ Offline';
-      statusDiv.style.background = 'var(--danger)';
+      statusDiv.className = 'sync-status offline';
     }
   }
 
-  // Load plans from Firestore
+  // Load plans from Firebase
   async function loadPlans() {
     showLoading();
     try {
@@ -281,14 +745,14 @@
     } catch (error) {
       console.error("Error loading plans:", error);
       updateSyncStatus(false);
-      document.getElementById('plansTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">❌ Error loading data. Check Firebase connection.</td></tr>';
+      document.getElementById('plansTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">❌ Error loading from Firebase. Check console.</td></tr>';
     } finally {
       hideLoading();
     }
   }
 
-  // Save plan to Firestore
-  async function savePlanToFirestore(planData, isEdit) {
+  // Save plan to Firebase
+  async function savePlanToFirebase(planData, isEdit) {
     try {
       if (isEdit) {
         const docRef = window.doc(window.db, "actionplans", planData.id);
@@ -305,8 +769,8 @@
     }
   }
 
-  // Delete plan from Firestore
-  async function deletePlanFromFirestore(id) {
+  // Delete plan from Firebase
+  async function deletePlanFromFirebase(id) {
     try {
       const docRef = window.doc(window.db, "actionplans", id);
       await window.deleteDoc(docRef);
@@ -336,7 +800,7 @@
     const open = plans.filter(p => p.status === 'pendente' || p.status === 'em_andamento').length;
     const completed = plans.filter(p => p.status === 'concluido').length;
     const overdue = plans.filter(p => p.status === 'atrasado').length;
-    const withEvidence = plans.filter(p => (p.images && p.images.length > 0)).length;
+    const withEvidence = plans.filter(p => (p.before?.length > 0) || (p.after?.length > 0)).length;
     
     document.getElementById('totalPlans').textContent = total;
     document.getElementById('openPlans').textContent = open;
@@ -348,6 +812,7 @@
   function updateFilterOptions() {
     const topics = [...new Set(plans.map(p => p.topic))];
     const responsibles = [...new Set(plans.map(p => p.responsible))];
+    
     document.getElementById('topicFilter').innerHTML = '<option value="">All</option>' + topics.map(t => `<option value="${t}">${t}</option>`).join('');
     document.getElementById('responsibleFilter').innerHTML = '<option value="">All</option>' + responsibles.map(r => `<option value="${r}">${r}</option>`).join('');
   }
@@ -358,9 +823,29 @@
   }
   function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
 
-  function renderImages(images) {
-    if (!images || images.length === 0) return '<span style="color:gray;font-size:0.7rem;">No photos</span>';
-    return `<div style="display:flex;gap:0.25rem;">${images.slice(0, 2).map(img => `<img src="${img}" class="image-preview" onclick="openLightbox('${img}')">`).join('')}${images.length > 2 ? `<span style="font-size:0.7rem;">+${images.length-2}</span>` : ''}</div>`;
+  function renderComparison(plan) {
+    const beforeCount = plan.before?.length || 0;
+    const afterCount = plan.after?.length || 0;
+    
+    if (beforeCount === 0 && afterCount === 0) return '<span class="badge-evidence">No evidence</span>';
+    
+    let html = '<div class="comparison-gallery">';
+    if (beforeCount > 0) {
+      html += `<div class="comparison-item" onclick="openLightbox('${plan.before[0].data}')">
+        <div class="comparison-label before">BEFORE</div>
+        <img src="${plan.before[0].data}" class="comparison-thumb">
+        ${beforeCount > 1 ? `<div style="font-size:0.6rem">+${beforeCount-1}</div>` : ''}
+      </div>`;
+    }
+    if (afterCount > 0) {
+      html += `<div class="comparison-item" onclick="openLightbox('${plan.after[0].data}')">
+        <div class="comparison-label after">AFTER</div>
+        <img src="${plan.after[0].data}" class="comparison-thumb">
+        ${afterCount > 1 ? `<div style="font-size:0.6rem">+${afterCount-1}</div>` : ''}
+      </div>`;
+    }
+    html += '</div>';
+    return html;
   }
 
   function renderTable() {
@@ -396,7 +881,7 @@
         <td><span class="badge ${p.priority === 'alta' ? 'badge-high' : (p.priority === 'media' ? 'badge-medium' : 'badge-low')}">${priorityLabels[p.priority]}</span></td>
         <td>${formatDate(p.deadline)}</td>
         <td><span class="badge ${p.status === 'pendente' ? 'badge-pending' : (p.status === 'em_andamento' ? 'badge-progress' : (p.status === 'concluido' ? 'badge-done' : 'badge-late'))}" onclick="applyFilter('status', '${p.status}')">${statusLabels[p.status]}</span></td>
-        <td>${renderImages(p.images)}</td>
+        <td>${renderComparison(p)}</td>
         <td><div class="action-buttons"><button class="action-btn" onclick="editPlan('${p.id}')">✏️</button><button class="action-btn" onclick="deletePlan('${p.id}')">🗑️</button></div></td>
       </tr>
     `).join('');
@@ -409,6 +894,7 @@
 
   function renderCharts() {
     updateStatus();
+    
     const statusCount = { pendente:0, em_andamento:0, concluido:0, atrasado:0 };
     plans.forEach(p => statusCount[p.status]++);
     const total = plans.length || 1;
@@ -500,24 +986,32 @@
     if (type === 'clear') {
       activeFilters = { topic: '', status: '', responsible: '', search: '' };
     } else if (type === 'status') {
-      activeFilters.status = value;
+      if (value === 'open') {
+        activeFilters.status = '';
+      } else {
+        activeFilters.status = value;
+      }
     } else if (type === 'topic') {
       activeFilters.topic = value;
     } else if (type === 'responsible') {
       activeFilters.responsible = value;
     } else if (type === 'priority') {
       activeFilters.priority = value;
+    } else if (type === 'evidence') {
+      return;
     }
     
     document.getElementById('topicFilter').value = activeFilters.topic || '';
     document.getElementById('statusFilter').value = activeFilters.status || '';
     document.getElementById('responsibleFilter').value = activeFilters.responsible || '';
+    
     renderTable();
   }
 
   function openModal(id = null) {
     editId = id;
-    imageFiles = [];
+    beforeFiles = [];
+    afterFiles = [];
     
     if (id) {
       const plan = plans.find(p => p.id === id);
@@ -532,7 +1026,8 @@
         document.getElementById('priority').value = plan.priority;
         document.getElementById('status').value = plan.status === 'atrasado' ? 'pendente' : plan.status;
         document.getElementById('deadline').value = plan.deadline;
-        imageFiles = [...(plan.images || [])];
+        beforeFiles = [...(plan.before || [])];
+        afterFiles = [...(plan.after || [])];
       }
     } else {
       document.getElementById('modalTitle').textContent = 'New Action Plan';
@@ -547,7 +1042,7 @@
       document.getElementById('deadline').value = '';
     }
     
-    renderImageList();
+    renderImageLists();
     document.getElementById('planModal').classList.add('active');
   }
   
@@ -557,36 +1052,62 @@
     document.getElementById('formError').style.display = 'none';
   }
   
-  function renderImageList() {
-    const container = document.getElementById('imageList');
-    if (imageFiles.length === 0) {
-      container.innerHTML = '<p style="color:gray;font-size:0.7rem;">No photos uploaded</p>';
-      return;
+  function renderImageLists() {
+    const beforeContainer = document.getElementById('beforeList');
+    if (beforeFiles.length === 0) {
+      beforeContainer.innerHTML = '<p style="color:gray;font-size:0.7rem;">No before photos</p>';
+    } else {
+      beforeContainer.innerHTML = beforeFiles.map((f, i) => `
+        <div class="image-card">
+          <img src="${f.data}" onclick="openLightbox('${f.data}')">
+          <button class="remove-img" onclick="event.stopPropagation(); removeBeforeImage(${i})">×</button>
+        </div>
+      `).join('');
     }
-    container.innerHTML = imageFiles.map((img, i) => `
-      <div class="image-card">
-        <img src="${img}" onclick="openLightbox('${img}')">
-        <button class="remove-img" onclick="event.stopPropagation(); removeImage(${i})">×</button>
-      </div>
-    `).join('');
+    
+    const afterContainer = document.getElementById('afterList');
+    if (afterFiles.length === 0) {
+      afterContainer.innerHTML = '<p style="color:gray;font-size:0.7rem;">No after photos</p>';
+    } else {
+      afterContainer.innerHTML = afterFiles.map((f, i) => `
+        <div class="image-card">
+          <img src="${f.data}" onclick="openLightbox('${f.data}')">
+          <button class="remove-img" onclick="event.stopPropagation(); removeAfterImage(${i})">×</button>
+        </div>
+      `).join('');
+    }
   }
   
-  function removeImage(idx) {
-    imageFiles.splice(idx, 1);
-    renderImageList();
+  function removeBeforeImage(idx) {
+    beforeFiles.splice(idx, 1);
+    renderImageLists();
   }
   
-  document.getElementById('imageInput').addEventListener('change', function(e) {
+  function removeAfterImage(idx) {
+    afterFiles.splice(idx, 1);
+    renderImageLists();
+  }
+  
+  document.getElementById('beforeInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
-    if (imageFiles.length + files.length > 5) {
-      alert('Maximum 5 photos allowed');
-      return;
-    }
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = function(ev) {
-        imageFiles.push(ev.target.result);
-        renderImageList();
+        beforeFiles.push({ name: file.name, data: ev.target.result, type: 'image' });
+        renderImageLists();
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  });
+  
+  document.getElementById('afterInput').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        afterFiles.push({ name: file.name, data: ev.target.result, type: 'image' });
+        renderImageLists();
       };
       reader.readAsDataURL(file);
     });
@@ -615,12 +1136,17 @@
       priority: document.getElementById('priority').value,
       status: document.getElementById('status').value,
       deadline,
-      images: imageFiles,
+      before: beforeFiles,
+      after: afterFiles,
       createdAt: editId ? (plans.find(p => p.id === editId)?.createdAt || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString()
     };
     
-    const success = await savePlanToFirestore(planData, !!editId);
+    if (editId) {
+      planData.id = editId;
+    }
+    
+    const success = await savePlanToFirebase(planData, !!editId);
     
     if (success) {
       await loadPlans();
@@ -639,7 +1165,7 @@
   async function confirmDelete() {
     if (deleteId) {
       showLoading();
-      const success = await deletePlanFromFirestore(deleteId);
+      const success = await deletePlanFromFirebase(deleteId);
       if (success) {
         await loadPlans();
       } else {
@@ -671,17 +1197,19 @@
     }
   }
   
-  // Make functions global
+  // Make functions global for onclick handlers
   window.applyFilter = applyFilter;
   window.openLightbox = openLightbox;
   window.closeLightbox = closeLightbox;
+  window.closeModal = closeModal;
   window.editPlan = editPlan;
   window.deletePlan = deletePlan;
-  window.removeImage = removeImage;
-  window.closeModal = closeModal;
-  window.closeDeleteModal = closeDeleteModal;
-  window.confirmDelete = confirmDelete;
+  window.removeBeforeImage = removeBeforeImage;
+  window.removeAfterImage = removeAfterImage;
   window.savePlan = savePlan;
+  window.confirmDelete = confirmDelete;
+  window.closeDeleteModal = closeDeleteModal;
+  window.switchTab = switchTab;
   
   // Event listeners
   document.getElementById('btnNewPlan').addEventListener('click', () => openModal());
@@ -692,7 +1220,7 @@
   document.getElementById('statusFilter').addEventListener('change', () => { activeFilters.status = document.getElementById('statusFilter').value; renderTable(); });
   document.getElementById('responsibleFilter').addEventListener('change', () => { activeFilters.responsible = document.getElementById('responsibleFilter').value; renderTable(); });
   
-  // Initial load
+  // Load data from Firebase
   loadPlans();
 </script>
 </body>
