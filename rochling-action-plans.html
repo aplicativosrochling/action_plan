@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Röchling | Action Plans - Before & After Evidence</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #0A2B4E;
+      --primary-dark: #061E38;
+      --primary-light: #1A4A7A;
+      --accent: #2D7A4B;
+      --warning: #E67E22;
+      --danger: #C0392B;
+      --info: #3498DB;
+      --gray-50: #F8F9FA;
+      --gray-100: #F1F3F5;
+      --gray-200: #E9ECEF;
+      --gray-300: #DEE2E6;
+      --gray-400: #CED4DA;
+      --gray-500: #ADB5BD;
+      --gray-600: #6C757D;
+      --gray-700: #495057;
+      --gray-800: #343A40;
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--gray-100); color: var(--gray-800); line-height: 1.5; }
+    .app-header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-lg); }
+    .header-container { max-width: 1400px; margin: 0 auto; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .logo-area { display: flex; align-items: center; gap: 1rem; }
+    .logo-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 28px; height: 28px; stroke: white; fill: none; }
+    .logo-text h1 { font-size: 1.5rem; font-weight: 700; }
+    .logo-text p { font-size: 0.75rem; opacity: 0.8; }
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .sync-status { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; opacity: 0.85; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .sync-dot.online { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+    .sync-dot.syncing { background: #f39c12; animation: pulse 1s infinite; }
+    .sync-dot.offline { background: #e74c3c; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .btn-primary { background: white; color: var(--primary); border: none; padding: 0.625rem 1.25rem; border-radius: 12px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .main-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: white; border-radius: 16px; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-info h3 { font-size: 0.75rem; color: var(--gray-600); margin-bottom: 0.25rem; }
+    .stat-number { font-size: 1.75rem; font-weight: 700; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .stat-icon.blue { background: #EBF5FB; } .stat-icon.orange { background: #FEF5E7; } .stat-icon.green { background: #E6F4EA; } .stat-icon.red { background: #FDEDEC; } .stat-icon.purple { background: #F4ECF7; }
+    .stat-icon svg { width: 24px; height: 24px; }
+    .tabs-container { background: white; border-radius: 12px; padding: 0.25rem; margin-bottom: 1.5rem; display: inline-flex; gap: 0.25rem; box-shadow: var(--shadow); }
+    .tab-btn { padding: 0.625rem 1.25rem; border: none; background: transparent; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; color: var(--gray-600); }
+    .tab-btn.active { background: var(--primary); color: white; }
+    .filter-bar { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+    .filter-group label { font-size: 0.7rem; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 0.25rem; }
+    .filter-group input, .filter-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 0.875rem; }
+    .table-container { background: white; border-radius: 12px; overflow-x: auto; box-shadow: var(--shadow); }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+    .data-table th { padding: 0.75rem 1rem; text-align: left; font-size: 0.7rem; font-weight: 700; color: var(--gray-600); border-bottom: 1px solid var(--gray-200); }
+    .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--gray-200); font-size: 0.8rem; vertical-align: middle; }
+    .data-table tr:hover { background: var(--gray-50); }
+    .badge { display: inline-flex; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+    .badge-topic { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .badge-pending { background: #FEF5E7; color: #E67E22; }
+    .badge-progress { background: #EBF5FB; color: #3498DB; }
+    .badge-done { background: #E6F4EA; color: #2D7A4B; }
+    .badge-late { background: #FDEDEC; color: #C0392B; }
+    .badge-high { background: #FDEDEC; color: #C0392B; }
+    .badge-medium { background: #FEF5E7; color: #E67E22; }
+    .badge-low { background: #E6F4EA; color: #2D7A4B; }
+    .comparison-gallery { display: flex; gap: 0.5rem; align-items: center; }
+    .comparison-item { text-align: center; cursor: pointer; }
+    .comparison-label { font-size: 0.6rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .comparison-label.before { color: var(--warning); } .comparison-label.after { color: var(--accent); }
+    .comparison-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 2px solid var(--gray-300); transition: all 0.2s; }
+    .comparison-thumb:hover { transform: scale(1.05); border-color: var(--primary); }
+    .badge-evidence { background: var(--info); color: white; font-size: 0.6rem; padding: 0.15rem 0.4rem; border-radius: 10px; }
+    .action-buttons { display: flex; gap: 0.25rem; opacity: 0.6; }
+    .data-table tr:hover .action-buttons { opacity: 1; }
+    .action-btn { padding: 0.25rem; border: none; background: transparent; cursor: pointer; border-radius: 4px; }
+    .action-btn:hover { background: var(--gray-200); }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; }
+    .chart-card { background: white; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow); }
+    .chart-title { font-size: 0.875rem; font-weight: 700; margin-bottom: 1rem; }
+    .donut-container { display: flex; justify-content: center; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .legend { display: flex; flex-direction: column; gap: 0.5rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 8px; }
+    .legend-item:hover { background: var(--gray-100); }
+    .legend-color { width: 12px; height: 12px; border-radius: 50%; }
+    .bar-item { cursor: pointer; margin-bottom: 0.75rem; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem; }
+    .progress-bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: white; border-radius: 16px; width: 90%; max-width: 900px; max-height: 85vh; overflow-y: auto; }
+    .modal-header { padding: 1rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; background: var(--primary); color: white; border-radius: 16px 16px 0 0; position: sticky; top: 0; }
+    .close-modal { background: rgba(255,255,255,0.2); border: none; border-radius: 8px; padding: 0.25rem 0.5rem; cursor: pointer; color: white; }
+    .modal-body { padding: 1.5rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-field.full-width { grid-column: 1 / -1; }
+    .form-field label { font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 0.25rem; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 0.875rem; }
+    .form-field textarea { min-height: 60px; resize: vertical; }
+    .comparison-section { border: 2px dashed var(--gray-300); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .comparison-title { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .comparison-title.before { color: var(--warning); } .comparison-title.after { color: var(--accent); }
+    .image-grid { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .image-card { position: relative; width: 100px; }
+    .image-card img { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; border: 2px solid var(--gray-300); }
+    .remove-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+    .upload-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--gray-100); border-radius: 8px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem; border: none; }
+    .modal-footer { padding: 1rem; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 0.5rem; position: sticky; bottom: 0; background: white; }
+    .btn-secondary { padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; border-radius: 8px; cursor: pointer; }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1100; }
+    .lightbox.active { display: flex; }
+    .lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+    .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+    .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; flex-direction: column; gap: 1rem; }
+    .spinner { width: 40px; height: 40px; border: 4px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--gray-800); color: white; padding: 0.75rem 1.25rem; border-radius: 12px; font-size: 0.875rem; z-index: 3000; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--accent); }
+    .toast.error { background: var(--danger); }
+    @media (max-width: 768px) { .header-container, .main-container { padding: 1rem; } .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <span style="font-size:0.875rem;color:var(--gray-600)">Connecting to Firebase...</span>
+</div>
+
+<div id="app">
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <div class="logo-text"><h1>Röchling</h1><p>Before &amp; After Evidence</p></div>
+      </div>
+      <div class="header-actions">
+        <div class="sync-status">
+          <div class="sync-dot" id="syncDot"></div>
+          <span id="syncLabel">Connecting...</span>
+        </div>
+        <button class="btn-primary" id="btnNewPlan">+ New Action Plan</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <div class="stats-grid">
+      <div class="stat-card" onclick="applyFilter('clear')">
+        <div><h3>Total Plans</h3><div class="stat-number" id="totalPlans">0</div></div>
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('status', 'open')">
+        <div><h3>Open</h3><div class="stat-number" id="openPlans">0</div></div>
+        <div class="stat-icon orange"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('status', 'concluido')">
+        <div><h3>Completed</h3><div class="stat-number" id="completedPlans">0</div></div>
+        <div class="stat-icon green"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('status', 'atrasado')">
+        <div><h3>Overdue</h3><div class="stat-number" id="overduePlans">0</div></div>
+        <div class="stat-icon red"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+      </div>
+      <div class="stat-card" onclick="applyFilter('evidence', 'has')">
+        <div><h3>With Evidence</h3><div class="stat-number" id="evidenceCount">0</div></div>
+        <div class="stat-icon purple"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M13.5 3H12H8C6.9 3 6 3.9 6 5v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8.5M13.5 3L19 8.5M13.5 3v5.5H19"/></svg></div>
+      </div>
+    </div>
+
+    <div class="tabs-container">
+      <button class="tab-btn active" id="tabPlansBtn">📋 Plans</button>
+      <button class="tab-btn" id="tabAnalyticsBtn">📊 Analytics</button>
+    </div>
+
+    <div id="plansPanel">
+      <div class="filter-bar">
+        <div class="filter-grid">
+          <div class="filter-group"><label>Search</label><input type="text" id="searchInput" placeholder="Search..."></div>
+          <div class="filter-group"><label>Topic</label><select id="topicFilter"><option value="">All</option></select></div>
+          <div class="filter-group"><label>Status</label><select id="statusFilter"><option value="">All</option><option value="pendente">Pending</option><option value="em_andamento">In Progress</option><option value="concluido">Completed</option></select></div>
+          <div class="filter-group"><label>Responsible</label><select id="responsibleFilter"><option value="">All</option></select></div>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr><th>Topic</th><th>Item/Problem</th><th>Action</th><th>Responsible</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Before/After</th><th></th></tr>
+          </thead>
+          <tbody id="plansTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="analyticsPanel" style="display: none;">
+      <div class="charts-grid">
+        <div class="chart-card"><div class="chart-title">📊 Status Distribution</div><div id="statusChart"></div></div>
+        <div class="chart-card"><div class="chart-title">📂 Plans by Topic</div><div id="topicChart"></div></div>
+        <div class="chart-card"><div class="chart-title">👤 Plans by Responsible</div><div id="responsibleChart"></div></div>
+        <div class="chart-card"><div class="chart-title">⚡ Priority Distribution</div><div id="priorityChart"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Plan Modal -->
+  <div id="planModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="modalTitle">New Action Plan</h2><button class="close-modal" onclick="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-field"><label>Topic *</label><input type="text" id="topic"></div>
+          <div class="form-field"><label>Item *</label><input type="text" id="item"></div>
+          <div class="form-field full-width"><label>Problem *</label><textarea id="problem" placeholder="Describe the problem..."></textarea></div>
+          <div class="form-field full-width"><label>Action Plan *</label><textarea id="action" placeholder="Describe the action taken..."></textarea></div>
+          <div class="form-field"><label>Responsible *</label><input type="text" id="responsible"></div>
+          <div class="form-field"><label>Client</label><input type="text" id="client"></div>
+          <div class="form-field"><label>Priority</label><select id="priority"><option value="baixa">Low</option><option value="media" selected>Medium</option><option value="alta">High</option></select></div>
+          <div class="form-field"><label>Status</label><select id="status"><option value="pendente">Pending</option><option value="em_andamento">In Progress</option><option value="concluido">Completed</option></select></div>
+          <div class="form-field"><label>Deadline *</label><input type="date" id="deadline"></div>
+        </div>
+        <div class="comparison-section">
+          <div class="comparison-title before">📸 BEFORE (Problem Evidence)</div>
+          <button class="upload-btn" onclick="document.getElementById('beforeInput').click()">+ Upload Before Photos</button>
+          <input type="file" id="beforeInput" multiple accept="image/*" style="display:none">
+          <div id="beforeList" class="image-grid"></div>
+        </div>
+        <div class="comparison-section">
+          <div class="comparison-title after">✅ AFTER (Solution Evidence)</div>
+          <button class="upload-btn" onclick="document.getElementById('afterInput').click()">+ Upload After Photos</button>
+          <input type="file" id="afterInput" multiple accept="image/*" style="display:none">
+          <div id="afterList" class="image-grid"></div>
+        </div>
+        <div id="formError" style="color:red;font-size:0.75rem;margin-top:0.5rem;display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="saveBtn" onclick="savePlan()" style="background:var(--primary);color:white;">Save Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:350px;">
+      <div class="modal-header" style="background:var(--danger);"><h2>Delete Plan</h2><button class="close-modal" onclick="closeDeleteModal()">✕</button></div>
+      <div class="modal-body"><p>Are you sure you want to delete this action plan?</p></div>
+      <div class="modal-footer"><button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button><button class="btn-primary" onclick="confirmDelete()" style="background:var(--danger);color:white;">Delete</button></div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" src="">
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Firebase SDK v9 compat (UMD) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // ─── Firebase Init ───────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyDoemuROMtx8ygKURM6pVwJ4vR4yFBwA4A",
+    authDomain: "actionplan-717cb.firebaseapp.com",
+    projectId: "actionplan-717cb",
+    storageBucket: "actionplan-717cb.firebasestorage.app",
+    messagingSenderId: "925102313740",
+    appId: "1:925102313740:web:6854fb589d56ea21baf929"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const plansRef = db.collection('actionPlans');
+
+  // ─── App State ───────────────────────────────────────────────────────────────
+  let plans = [];
+  let editId = null;
+  let deleteId = null;
+  let beforeFiles = [];
+  let afterFiles = [];
+  let activeFilters = { topic: '', status: '', responsible: '', search: '' };
+
+  const statusLabels = { pendente:'Pending', em_andamento:'In Progress', concluido:'Completed', atrasado:'Overdue' };
+  const priorityLabels = { baixa:'Low', media:'Medium', alta:'High' };
+  const statusColors = { pendente:'#E67E22', em_andamento:'#3498DB', concluido:'#2D7A4B', atrasado:'#C0392B' };
+  const priorityColors = { baixa:'#2D7A4B', media:'#E67E22', alta:'#C0392B' };
+
+  // ─── Toast ───────────────────────────────────────────────────────────────────
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  // ─── Sync indicator ──────────────────────────────────────────────────────────
+  function setSyncStatus(state) {
+    const dot = document.getElementById('syncDot');
+    const lbl = document.getElementById('syncLabel');
+    dot.className = 'sync-dot ' + state;
+    const map = { online: 'Synced', syncing: 'Saving...', offline: 'Offline', connecting: 'Connecting...' };
+    lbl.textContent = map[state] || state;
+  }
+
+  // ─── Real-time listener ───────────────────────────────────────────────────────
+  function startListener() {
+    plansRef.orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+      plans = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      document.getElementById('loadingOverlay').style.display = 'none';
+      setSyncStatus('online');
+      updateStats();
+      updateFilterOptions();
+      renderTable();
+      renderCharts();
+    }, err => {
+      console.error(err);
+      setSyncStatus('offline');
+      document.getElementById('loadingOverlay').style.display = 'none';
+      showToast('Firebase connection error: ' + err.message, 'error');
+    });
+  }
+
+  // ─── Status recalc ───────────────────────────────────────────────────────────
+  function computedStatus(plan) {
+    if (plan.status === 'concluido') return 'concluido';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const deadline = new Date(plan.deadline + 'T00:00:00');
+    if (deadline < today) return 'atrasado';
+    return plan.status;
+  }
+
+  // ─── Stats ───────────────────────────────────────────────────────────────────
+  function updateStats() {
+    const total = plans.length;
+    const open = plans.filter(p => { const s = computedStatus(p); return s === 'pendente' || s === 'em_andamento'; }).length;
+    const completed = plans.filter(p => computedStatus(p) === 'concluido').length;
+    const overdue = plans.filter(p => computedStatus(p) === 'atrasado').length;
+    const withEvidence = plans.filter(p => (p.before?.length > 0) || (p.after?.length > 0)).length;
+    document.getElementById('totalPlans').textContent = total;
+    document.getElementById('openPlans').textContent = open;
+    document.getElementById('completedPlans').textContent = completed;
+    document.getElementById('overduePlans').textContent = overdue;
+    document.getElementById('evidenceCount').textContent = withEvidence;
+  }
+
+  function updateFilterOptions() {
+    const topics = [...new Set(plans.map(p => p.topic))];
+    const responsibles = [...new Set(plans.map(p => p.responsible))];
+    const curTopic = document.getElementById('topicFilter').value;
+    const curResp = document.getElementById('responsibleFilter').value;
+    document.getElementById('topicFilter').innerHTML = '<option value="">All</option>' + topics.map(t => `<option value="${t}" ${t===curTopic?'selected':''}>${t}</option>`).join('');
+    document.getElementById('responsibleFilter').innerHTML = '<option value="">All</option>' + responsibles.map(r => `<option value="${r}" ${r===curResp?'selected':''}>${r}</option>`).join('');
+  }
+
+  // ─── Lightbox ────────────────────────────────────────────────────────────────
+  function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.add('active'); }
+  function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
+
+  // ─── Comparison render ───────────────────────────────────────────────────────
+  function renderComparison(plan) {
+    const bc = plan.before?.length || 0;
+    const ac = plan.after?.length || 0;
+    if (bc === 0 && ac === 0) return '<span class="badge-evidence">No evidence</span>';
+    let html = '<div class="comparison-gallery">';
+    if (bc > 0) html += `<div class="comparison-item" onclick="openLightbox('${plan.before[0].data}')"><div class="comparison-label before">BEFORE</div><img src="${plan.before[0].data}" class="comparison-thumb">${bc>1?`<div style="font-size:0.6rem">+${bc-1}</div>`:''}</div>`;
+    if (ac > 0) html += `<div class="comparison-item" onclick="openLightbox('${plan.after[0].data}')"><div class="comparison-label after">AFTER</div><img src="${plan.after[0].data}" class="comparison-thumb">${ac>1?`<div style="font-size:0.6rem">+${ac-1}</div>`:''}</div>`;
+    return html + '</div>';
+  }
+
+  // ─── Table render ─────────────────────────────────────────────────────────────
+  function renderTable() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase();
+    const topic = activeFilters.topic || document.getElementById('topicFilter').value;
+    const status = activeFilters.status || document.getElementById('statusFilter').value;
+    const responsible = activeFilters.responsible || document.getElementById('responsibleFilter').value;
+
+    let filtered = plans.filter(p => {
+      const cs = computedStatus(p);
+      if (topic && p.topic !== topic) return false;
+      if (status && cs !== status) return false;
+      if (responsible && p.responsible !== responsible) return false;
+      if (search) {
+        const text = `${p.topic} ${p.item} ${p.problem} ${p.action} ${p.responsible}`.toLowerCase();
+        if (!text.includes(search)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('plansTableBody');
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">No plans found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filtered.map(p => {
+      const cs = computedStatus(p);
+      return `<tr>
+        <td><span class="badge badge-topic" onclick="applyFilter('topic','${p.topic}')">${p.topic}</span></td>
+        <td><strong>${p.item}</strong><br><small style="color:gray">${(p.problem||'').substring(0,50)}${(p.problem||'').length>50?'...':''}</small></td>
+        <td style="max-width:200px;">${(p.action||'').substring(0,60)}${(p.action||'').length>60?'...':''}</td>
+        <td><span class="badge badge-progress" onclick="applyFilter('responsible','${p.responsible}')">${p.responsible}</span></td>
+        <td><span class="badge ${p.priority==='alta'?'badge-high':(p.priority==='media'?'badge-medium':'badge-low')}">${priorityLabels[p.priority]||p.priority}</span></td>
+        <td>${formatDate(p.deadline)}</td>
+        <td><span class="badge ${cs==='pendente'?'badge-pending':(cs==='em_andamento'?'badge-progress':(cs==='concluido'?'badge-done':'badge-late'))}" onclick="applyFilter('status','${cs}')">${statusLabels[cs]||cs}</span></td>
+        <td>${renderComparison(p)}</td>
+        <td><div class="action-buttons"><button class="action-btn" onclick="editPlan('${p.id}')">✏️</button><button class="action-btn" onclick="deletePlan('${p.id}')">🗑️</button></div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('pt-BR');
+  }
+
+  // ─── Charts ──────────────────────────────────────────────────────────────────
+  function renderCharts() {
+    const statusCount = { pendente:0, em_andamento:0, concluido:0, atrasado:0 };
+    const topicCount = {}, respCount = {}, priorityCount = { alta:0, media:0, baixa:0 };
+    plans.forEach(p => {
+      statusCount[computedStatus(p)] = (statusCount[computedStatus(p)]||0)+1;
+      topicCount[p.topic] = (topicCount[p.topic]||0)+1;
+      respCount[p.responsible] = (respCount[p.responsible]||0)+1;
+      priorityCount[p.priority] = (priorityCount[p.priority]||0)+1;
+    });
+    const total = plans.length || 1;
+
+    // Status donut
+    let sHtml = `<div class="donut-container"><svg width="160" height="160" viewBox="0 0 160 160">`;
+    let off = 0;
+    for (const [s,c] of Object.entries(statusCount)) {
+      if (c>0) {
+        const circ = 2*Math.PI*60, dash=(c/total)*circ, doff=-off/total*circ;
+        sHtml += `<circle cx="80" cy="80" r="60" fill="none" stroke="${statusColors[s]}" stroke-width="20" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${doff}" transform="rotate(-90,80,80)" style="cursor:pointer" onclick="applyFilter('status','${s}')"/>`;
+        off+=c;
+      }
+    }
+    sHtml += `<circle cx="80" cy="80" r="45" fill="white"/></svg><div class="legend">`;
+    for (const [s,c] of Object.entries(statusCount)) if(c>0) sHtml+=`<div class="legend-item" onclick="applyFilter('status','${s}')"><div class="legend-color" style="background:${statusColors[s]}"></div><span>${statusLabels[s]}</span><strong>${c}</strong></div>`;
+    document.getElementById('statusChart').innerHTML = sHtml + '</div></div>';
+
+    const maxT = Math.max(...Object.values(topicCount),1);
+    document.getElementById('topicChart').innerHTML = Object.entries(topicCount).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`<div class="bar-item" onclick="applyFilter('topic','${t}')"><div class="bar-label"><span>${t}</span><span>${c}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(c/maxT)*100}%;background:#667eea"></div></div></div>`).join('') || '<p>No data</p>';
+
+    const maxR = Math.max(...Object.values(respCount),1);
+    document.getElementById('responsibleChart').innerHTML = Object.entries(respCount).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([r,c])=>`<div class="bar-item" onclick="applyFilter('responsible','${r}')"><div class="bar-label"><span>${r}</span><span>${c}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(c/maxR)*100}%;background:#3498DB"></div></div></div>`).join('') || '<p>No data</p>';
+
+    let pHtml = `<div class="donut-container"><svg width="140" height="140" viewBox="0 0 140 140">`;
+    let poff=0;
+    for(const [p,c] of Object.entries(priorityCount)){
+      if(c>0){const circ=2*Math.PI*50,dash=(c/total)*circ,doff=-poff/total*circ;pHtml+=`<circle cx="70" cy="70" r="50" fill="none" stroke="${priorityColors[p]}" stroke-width="18" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${doff}" transform="rotate(-90,70,70)" style="cursor:pointer" onclick="applyFilter('priority','${p}')"/>`;poff+=c;}
+    }
+    pHtml+=`<circle cx="70" cy="70" r="38" fill="white"/></svg><div class="legend">`;
+    for(const [p,c] of Object.entries(priorityCount)) if(c>0) pHtml+=`<div class="legend-item" onclick="applyFilter('priority','${p}')"><div class="legend-color" style="background:${priorityColors[p]}"></div><span>${priorityLabels[p]}</span><strong>${c}</strong></div>`;
+    document.getElementById('priorityChart').innerHTML = pHtml+'</div></div>';
+  }
+
+  // ─── Filters ─────────────────────────────────────────────────────────────────
+  function applyFilter(type, value) {
+    if (type==='clear') { activeFilters = {topic:'',status:'',responsible:'',search:''}; }
+    else if (type==='status') { activeFilters.status = value==='open' ? '' : value; }
+    else if (type==='topic') { activeFilters.topic = value; }
+    else if (type==='responsible') { activeFilters.responsible = value; }
+    document.getElementById('topicFilter').value = activeFilters.topic||'';
+    document.getElementById('statusFilter').value = activeFilters.status||'';
+    document.getElementById('responsibleFilter').value = activeFilters.responsible||'';
+    renderTable();
+  }
+
+  // ─── Modal ───────────────────────────────────────────────────────────────────
+  function openModal(id=null) {
+    editId = id; beforeFiles = []; afterFiles = [];
+    if (id) {
+      const plan = plans.find(p=>p.id===id);
+      if (plan) {
+        document.getElementById('modalTitle').textContent = 'Edit Action Plan';
+        document.getElementById('topic').value = plan.topic||'';
+        document.getElementById('item').value = plan.item||'';
+        document.getElementById('problem').value = plan.problem||'';
+        document.getElementById('action').value = plan.action||'';
+        document.getElementById('responsible').value = plan.responsible||'';
+        document.getElementById('client').value = plan.client||'';
+        document.getElementById('priority').value = plan.priority||'media';
+        const s = plan.status==='atrasado'?'pendente':plan.status;
+        document.getElementById('status').value = s||'pendente';
+        document.getElementById('deadline').value = plan.deadline||'';
+        beforeFiles = [...(plan.before||[])];
+        afterFiles = [...(plan.after||[])];
+      }
+    } else {
+      document.getElementById('modalTitle').textContent = 'New Action Plan';
+      ['topic','item','problem','action','responsible','client'].forEach(f=>document.getElementById(f).value='');
+      document.getElementById('priority').value = 'media';
+      document.getElementById('status').value = 'pendente';
+      document.getElementById('deadline').value = '';
+    }
+    renderImageLists();
+    document.getElementById('planModal').classList.add('active');
+  }
+
+  function closeModal() { document.getElementById('planModal').classList.remove('active'); editId=null; document.getElementById('formError').style.display='none'; }
+
+  function renderImageLists() {
+    const bc = document.getElementById('beforeList');
+    bc.innerHTML = beforeFiles.length===0 ? '<p style="color:gray;font-size:0.7rem;">No before photos</p>' :
+      beforeFiles.map((f,i)=>`<div class="image-card"><img src="${f.data}" onclick="openLightbox('${f.data}')"><button class="remove-img" onclick="event.stopPropagation();removeBeforeImage(${i})">×</button></div>`).join('');
+    const ac = document.getElementById('afterList');
+    ac.innerHTML = afterFiles.length===0 ? '<p style="color:gray;font-size:0.7rem;">No after photos</p>' :
+      afterFiles.map((f,i)=>`<div class="image-card"><img src="${f.data}" onclick="openLightbox('${f.data}')"><button class="remove-img" onclick="event.stopPropagation();removeAfterImage(${i})">×</button></div>`).join('');
+  }
+
+  function removeBeforeImage(idx) { beforeFiles.splice(idx,1); renderImageLists(); }
+  function removeAfterImage(idx) { afterFiles.splice(idx,1); renderImageLists(); }
+
+  document.getElementById('beforeInput').addEventListener('change', function(e) {
+    Array.from(e.target.files).forEach(file => {
+      const r = new FileReader();
+      r.onload = ev => { beforeFiles.push({name:file.name, data:ev.target.result}); renderImageLists(); };
+      r.readAsDataURL(file);
+    });
+    e.target.value='';
+  });
+
+  document.getElementById('afterInput').addEventListener('change', function(e) {
+    Array.from(e.target.files).forEach(file => {
+      const r = new FileReader();
+      r.onload = ev => { afterFiles.push({name:file.name, data:ev.target.result}); renderImageLists(); };
+      r.readAsDataURL(file);
+    });
+    e.target.value='';
+  });
+
+  // ─── Save to Firestore ───────────────────────────────────────────────────────
+  async function savePlan() {
+    const topic = document.getElementById('topic').value.trim();
+    const item = document.getElementById('item').value.trim();
+    const problem = document.getElementById('problem').value.trim();
+    const action = document.getElementById('action').value.trim();
+    const responsible = document.getElementById('responsible').value.trim();
+    const deadline = document.getElementById('deadline').value;
+
+    if (!topic||!item||!problem||!action||!responsible||!deadline) {
+      document.getElementById('formError').textContent = 'Please fill all required fields';
+      document.getElementById('formError').style.display = 'block';
+      return;
+    }
+
+    setSyncStatus('syncing');
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    const planData = {
+      topic, item, problem, action, responsible,
+      client: document.getElementById('client').value.trim(),
+      priority: document.getElementById('priority').value,
+      status: document.getElementById('status').value,
+      deadline,
+      before: beforeFiles,
+      after: afterFiles,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      if (editId) {
+        await plansRef.doc(editId).update(planData);
+        showToast('Plan updated ✓', 'success');
+      } else {
+        planData.createdAt = new Date().toISOString();
+        await plansRef.add(planData);
+        showToast('Plan saved ✓', 'success');
+      }
+      closeModal();
+      setSyncStatus('online');
+    } catch (err) {
+      console.error(err);
+      setSyncStatus('offline');
+      document.getElementById('formError').textContent = 'Error saving: ' + err.message;
+      document.getElementById('formError').style.display = 'block';
+      showToast('Save error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Plan';
+    }
+  }
+
+  // ─── Edit / Delete ───────────────────────────────────────────────────────────
+  function editPlan(id) { openModal(id); }
+  function deletePlan(id) { deleteId=id; document.getElementById('deleteModal').classList.add('active'); }
+  function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); deleteId=null; }
+
+  async function confirmDelete() {
+    if (!deleteId) return;
+    setSyncStatus('syncing');
+    try {
+      await plansRef.doc(deleteId).delete();
+      showToast('Plan deleted', 'success');
+      setSyncStatus('online');
+    } catch(err) {
+      showToast('Delete error: ' + err.message, 'error');
+      setSyncStatus('offline');
+    }
+    closeDeleteModal();
+  }
+
+  // ─── Tabs ─────────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    const show = tab==='plans';
+    document.getElementById('plansPanel').style.display = show?'block':'none';
+    document.getElementById('analyticsPanel').style.display = show?'none':'block';
+    document.getElementById('tabPlansBtn').classList.toggle('active', show);
+    document.getElementById('tabAnalyticsBtn').classList.toggle('active', !show);
+    if (!show) renderCharts();
+    else renderTable();
+  }
+
+  // ─── Event listeners ─────────────────────────────────────────────────────────
+  document.getElementById('btnNewPlan').addEventListener('click', ()=>openModal());
+  document.getElementById('tabPlansBtn').addEventListener('click', ()=>switchTab('plans'));
+  document.getElementById('tabAnalyticsBtn').addEventListener('click', ()=>switchTab('analytics'));
+  document.getElementById('searchInput').addEventListener('input', ()=>renderTable());
+  document.getElementById('topicFilter').addEventListener('change', ()=>{ activeFilters.topic=document.getElementById('topicFilter').value; renderTable(); });
+  document.getElementById('statusFilter').addEventListener('change', ()=>{ activeFilters.status=document.getElementById('statusFilter').value; renderTable(); });
+  document.getElementById('responsibleFilter').addEventListener('change', ()=>{ activeFilters.responsible=document.getElementById('responsibleFilter').value; renderTable(); });
+
+  // ─── Start ───────────────────────────────────────────────────────────────────
+  setSyncStatus('connecting');
+  startListener();
+</script>
+</body>
+</html>
