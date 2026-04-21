@@ -5,34 +5,727 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Röchling | Action Plans - Before & After Evidence</title>
   
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (Modular v9+) -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword, 
+      signInWithPopup, 
+      GoogleAuthProvider, 
+      signOut, 
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      getDocs, 
+      deleteDoc, 
+      updateDoc,
+      query,
+      orderBy,
+      serverTimestamp 
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+    // ==================== CONFIGURAÇÃO FIREBASE ====================
+    // SUBSTITUA ESTES VALORES PELAS CREDENCIAIS DO SEU PROJETO FIREBASE
     const firebaseConfig = {
-      apiKey: "AIzaSyDoemuROMtx8ygKURM6pVwJ4vR4yFBwA4A",
-      authDomain: "actionplan-717cb.firebaseapp.com",
-      projectId: "actionplan-717cb",
-      storageBucket: "actionplan-717cb.firebasestorage.app",
-      messagingSenderId: "925102313740",
-      appId: "1:925102313740:web:6854fb589d56ea21baf929"
+  apiKey: "AIzaSyAfsCzt8tpuLWfai7YuhAVmuS-71ugSYMQ",
+  authDomain: "action-plan-e217d.firebaseapp.com",
+  projectId: "action-plan-e217d",
+  storageBucket: "action-plan-e217d.firebasestorage.app",
+  messagingSenderId: "219312132280",
+  appId: "1:219312132280:web:6f5e8cc9bacd0a9ec1a44d"
     };
 
+    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
 
-    window.db = db;
-    window.collection = collection;
-    window.addDoc = addDoc;
-    window.getDocs = getDocs;
-    window.doc = doc;
-    window.updateDoc = updateDoc;
-    window.deleteDoc = deleteDoc;
-    window.query = query;
-    window.orderBy = orderBy;
+    // Persistência local (mantém login mesmo fechando navegador)
+    setPersistence(auth, browserLocalPersistence);
+
+    // ==================== VARIÁVEIS GLOBAIS ====================
+    let plans = [];
+    let editId = null;
+    let deleteId = null;
+    let beforeFiles = [];
+    let afterFiles = [];
+    let activeFilters = { topic: '', status: '', responsible: '', search: '' };
+    let currentUser = null;
+
+    const statusLabels = { pendente: 'Pending', em_andamento: 'In Progress', concluido: 'Completed', atrasado: 'Overdue' };
+    const priorityLabels = { baixa: 'Low', media: 'Medium', alta: 'High' };
+    const statusColors = { pendente: '#E67E22', em_andamento: '#3498DB', concluido: '#2D7A4B', atrasado: '#C0392B' };
+    const priorityColors = { baixa: '#2D7A4B', media: '#E67E22', alta: '#C0392B' };
+
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 4); }
+
+    // ==================== AUTENTICAÇÃO ====================
     
-    console.log("✅ Firebase connected!");
+    // Registrar novo usuário (Email/Senha)
+    window.registerUser = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorDiv = document.getElementById('authError');
+      
+      if (!email || !password) {
+        errorDiv.textContent = 'Preencha email e senha';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      if (password.length < 6) {
+        errorDiv.textContent = 'Senha deve ter no mínimo 6 caracteres';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      try {
+        errorDiv.style.display = 'none';
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        currentUser = userCredential.user;
+        await createUserDocument(currentUser);
+        showApp();
+      } catch (error) {
+        errorDiv.textContent = getAuthErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+      }
+    };
+
+    // Login com Email/Senha
+    window.loginUser = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorDiv = document.getElementById('authError');
+      
+      if (!email || !password) {
+        errorDiv.textContent = 'Preencha email e senha';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      try {
+        errorDiv.style.display = 'none';
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        currentUser = userCredential.user;
+        showApp();
+      } catch (error) {
+        errorDiv.textContent = getAuthErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+      }
+    };
+
+    // Login com Google
+    window.loginWithGoogle = async function() {
+      const errorDiv = document.getElementById('authError');
+      try {
+        errorDiv.style.display = 'none';
+        const result = await signInWithPopup(auth, googleProvider);
+        currentUser = result.user;
+        await createUserDocument(currentUser);
+        showApp();
+      } catch (error) {
+        errorDiv.textContent = getAuthErrorMessage(error.code);
+        errorDiv.style.display = 'block';
+      }
+    };
+
+    // Logout
+    window.logoutUser = async function() {
+      try {
+        await signOut(auth);
+        currentUser = null;
+        plans = [];
+        showLogin();
+      } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+      }
+    };
+
+    // Criar documento do usuário no Firestore (se não existir)
+    async function createUserDocument(user) {
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          email: user.email,
+          displayName: user.displayName || '',
+          photoURL: user.photoURL || '',
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
+        });
+      } else {
+        await updateDoc(userRef, { lastLogin: serverTimestamp() });
+      }
+    }
+
+    // Mensagens de erro traduzidas
+    function getAuthErrorMessage(code) {
+      const messages = {
+        'auth/invalid-email': 'Email inválido',
+        'auth/user-disabled': 'Usuário desativado',
+        'auth/user-not-found': 'Usuário não encontrado',
+        'auth/wrong-password': 'Senha incorreta',
+        'auth/email-already-in-use': 'Email já está em uso',
+        'auth/weak-password': 'Senha muito fraca',
+        'auth/invalid-credential': 'Credenciais inválidas',
+        'auth/popup-closed-by-user': 'Login cancelado pelo usuário',
+        'auth/unauthorized-domain': 'Domínio não autorizado. Adicione este domínio no Firebase Console > Authentication > Settings > Authorized domains'
+      };
+      return messages[code] || `Erro: ${code}`;
+    }
+
+    // Observar estado de autenticação
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        showApp();
+      } else {
+        showLogin();
+      }
+    });
+
+    // ==================== FIRESTORE - CRUD ====================
+    
+    // Carregar planos do Firestore
+    async function loadPlansFromFirestore() {
+      if (!currentUser) return;
+      
+      try {
+        const plansRef = collection(db, 'users', currentUser.uid, 'plans');
+        const q = query(plansRef, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        
+        plans = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          plans.push({
+            id: doc.id,
+            ...data,
+            before: data.before || [],
+            after: data.after || []
+          });
+        });
+        
+        updateStats();
+        updateFilterOptions();
+        renderTable();
+      } catch (error) {
+        console.error('Erro ao carregar planos:', error);
+      }
+    }
+
+    // Salvar plano no Firestore
+    async function savePlanToFirestore(planData) {
+      if (!currentUser) return;
+      
+      try {
+        const planRef = doc(db, 'users', currentUser.uid, 'plans', planData.id);
+        await setDoc(planRef, {
+          ...planData,
+          updatedAt: serverTimestamp(),
+          userId: currentUser.uid
+        });
+      } catch (error) {
+        console.error('Erro ao salvar plano:', error);
+        throw error;
+      }
+    }
+
+    // Deletar plano do Firestore
+    async function deletePlanFromFirestore(planId) {
+      if (!currentUser) return;
+      
+      try {
+        const planRef = doc(db, 'users', currentUser.uid, 'plans', planId);
+        await deleteDoc(planRef);
+      } catch (error) {
+        console.error('Erro ao deletar plano:', error);
+        throw error;
+      }
+    }
+
+    // ==================== UI - LOGIN / APP ====================
+    
+    window.showLogin = function() {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('appScreen').style.display = 'none';
+      document.body.style.background = 'var(--gray-100)';
+    };
+
+    window.showApp = async function() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+      document.body.style.background = 'var(--gray-100)';
+      
+      // Atualizar UI do usuário
+      const userName = currentUser.displayName || currentUser.email.split('@')[0];
+      document.getElementById('userName').textContent = userName;
+      document.getElementById('userEmail').textContent = currentUser.email;
+      if (currentUser.photoURL) {
+        document.getElementById('userAvatar').src = currentUser.photoURL;
+      }
+      
+      await loadPlansFromFirestore();
+    };
+
+    // ==================== DADOS E ESTATÍSTICAS ====================
+    
+    function updateStatus() {
+      const today = new Date(); today.setHours(0,0,0,0);
+      plans = plans.map(p => {
+        if (p.status !== 'concluido') {
+          const deadline = new Date(p.deadline + 'T00:00:00');
+          if (deadline < today) return { ...p, status: 'atrasado' };
+        }
+        return p;
+      });
+    }
+
+    function updateStats() {
+      updateStatus();
+      const total = plans.length;
+      const open = plans.filter(p => p.status === 'pendente' || p.status === 'em_andamento').length;
+      const completed = plans.filter(p => p.status === 'concluido').length;
+      const overdue = plans.filter(p => p.status === 'atrasado').length;
+      const withEvidence = plans.filter(p => (p.before?.length > 0) || (p.after?.length > 0)).length;
+      
+      document.getElementById('totalPlans').textContent = total;
+      document.getElementById('openPlans').textContent = open;
+      document.getElementById('completedPlans').textContent = completed;
+      document.getElementById('overduePlans').textContent = overdue;
+      document.getElementById('evidenceCount').textContent = withEvidence;
+    }
+
+    function updateFilterOptions() {
+      const topics = [...new Set(plans.map(p => p.topic))];
+      const responsibles = [...new Set(plans.map(p => p.responsible))];
+      
+      document.getElementById('topicFilter').innerHTML = '<option value="">All</option>' + topics.map(t => `<option value="${t}">${t}</option>`).join('');
+      document.getElementById('responsibleFilter').innerHTML = '<option value="">All</option>' + responsibles.map(r => `<option value="${r}">${r}</option>`).join('');
+    }
+
+    // ==================== RENDERIZAÇÃO ====================
+    
+    window.openLightbox = function(src) {
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightbox').classList.add('active');
+    };
+    window.closeLightbox = function() { document.getElementById('lightbox').classList.remove('active'); };
+
+    function renderComparison(plan) {
+      const beforeCount = plan.before?.length || 0;
+      const afterCount = plan.after?.length || 0;
+      
+      if (beforeCount === 0 && afterCount === 0) return '<span class="badge-evidence">No evidence</span>';
+      
+      let html = '<div class="comparison-gallery">';
+      if (beforeCount > 0) {
+        html += `<div class="comparison-item" onclick="openLightbox('${plan.before[0].data}')">
+          <div class="comparison-label before">BEFORE</div>
+          <img src="${plan.before[0].data}" class="comparison-thumb">
+          ${beforeCount > 1 ? `<div style="font-size:0.6rem">+${beforeCount-1}</div>` : ''}
+        </div>`;
+      }
+      if (afterCount > 0) {
+        html += `<div class="comparison-item" onclick="openLightbox('${plan.after[0].data}')">
+          <div class="comparison-label after">AFTER</div>
+          <img src="${plan.after[0].data}" class="comparison-thumb">
+          ${afterCount > 1 ? `<div style="font-size:0.6rem">+${afterCount-1}</div>` : ''}
+        </div>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    window.renderTable = function() {
+      updateStatus();
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const topic = activeFilters.topic || document.getElementById('topicFilter').value;
+      const status = activeFilters.status || document.getElementById('statusFilter').value;
+      const responsible = activeFilters.responsible || document.getElementById('responsibleFilter').value;
+      
+      let filtered = plans.filter(p => {
+        if (topic && p.topic !== topic) return false;
+        if (status && p.status !== status) return false;
+        if (responsible && p.responsible !== responsible) return false;
+        if (search) {
+          const text = `${p.topic} ${p.item} ${p.problem} ${p.action} ${p.responsible}`.toLowerCase();
+          if (!text.includes(search)) return false;
+        }
+        return true;
+      });
+      
+      const tbody = document.getElementById('plansTableBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">No plans found</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = filtered.map(p => `
+        <tr>
+          <td><span class="badge badge-topic" onclick="applyFilter('topic', '${p.topic}')">${p.topic}</span></td>
+          <td><strong>${p.item}</strong><br><small style="color:gray">${p.problem.substring(0, 50)}${p.problem.length > 50 ? '...' : ''}</small></td>
+          <td style="max-width:200px;">${p.action.substring(0, 60)}${p.action.length > 60 ? '...' : ''}</td>
+          <td><span class="badge badge-progress" onclick="applyFilter('responsible', '${p.responsible}')">${p.responsible}</span></td>
+          <td><span class="badge ${p.priority === 'alta' ? 'badge-high' : (p.priority === 'media' ? 'badge-medium' : 'badge-low')}">${priorityLabels[p.priority]}</span></td>
+          <td>${formatDate(p.deadline)}</td>
+          <td><span class="badge ${p.status === 'pendente' ? 'badge-pending' : (p.status === 'em_andamento' ? 'badge-progress' : (p.status === 'concluido' ? 'badge-done' : 'badge-late'))}" onclick="applyFilter('status', '${p.status}')">${statusLabels[p.status]}</span></td>
+          <td>${renderComparison(p)}</td>
+          <td><div class="action-buttons"><button class="action-btn" onclick="editPlan('${p.id}')">✏️</button><button class="action-btn" onclick="deletePlan('${p.id}')">🗑️</button></div></td>
+        </tr>
+      `).join('');
+    };
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('pt-BR');
+    }
+
+    // ==================== GRÁFICOS ====================
+    
+    window.renderCharts = function() {
+      updateStatus();
+      
+      // Status chart
+      const statusCount = { pendente:0, em_andamento:0, concluido:0, atrasado:0 };
+      plans.forEach(p => statusCount[p.status]++);
+      const total = plans.length || 1;
+      
+      let statusHtml = `<div class="donut-container"><svg width="160" height="160" viewBox="0 0 160 160">`;
+      let offset = 0;
+      for (const [s, count] of Object.entries(statusCount)) {
+        if (count > 0) {
+          const perc = count / total;
+          const circ = 2 * Math.PI * 60;
+          const dash = perc * circ;
+          const off = -offset / total * circ;
+          statusHtml += `<circle cx="80" cy="80" r="60" fill="none" stroke="${statusColors[s]}" stroke-width="20" 
+                        stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${off}" 
+                        transform="rotate(-90, 80, 80)" style="cursor:pointer"
+                        onclick="applyFilter('status', '${s}')"/>`;
+          offset += count;
+        }
+      }
+      statusHtml += `<circle cx="80" cy="80" r="45" fill="white"/></svg><div class="legend">`;
+      for (const [s, count] of Object.entries(statusCount)) {
+        if (count > 0) {
+          statusHtml += `<div class="legend-item" onclick="applyFilter('status', '${s}')">
+            <div class="legend-color" style="background:${statusColors[s]}"></div>
+            <span>${statusLabels[s]}</span>
+            <strong>${count}</strong>
+          </div>`;
+        }
+      }
+      statusHtml += `</div></div>`;
+      document.getElementById('statusChart').innerHTML = statusHtml;
+      
+      // Topic chart
+      const topicCount = {};
+      plans.forEach(p => { topicCount[p.topic] = (topicCount[p.topic] || 0) + 1; });
+      const maxTopic = Math.max(...Object.values(topicCount), 1);
+      let topicHtml = '';
+      for (const [t, c] of Object.entries(topicCount).sort((a,b) => b[1] - a[1])) {
+        topicHtml += `<div class="bar-item" onclick="applyFilter('topic', '${t}')">
+          <div class="bar-label"><span>${t}</span><span>${c}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${(c/maxTopic)*100}%;background:#667eea"></div></div>
+        </div>`;
+      }
+      document.getElementById('topicChart').innerHTML = topicHtml || '<p>No data</p>';
+      
+      // Responsible chart
+      const respCount = {};
+      plans.forEach(p => { respCount[p.responsible] = (respCount[p.responsible] || 0) + 1; });
+      const maxResp = Math.max(...Object.values(respCount), 1);
+      let respHtml = '';
+      for (const [r, c] of Object.entries(respCount).sort((a,b) => b[1] - a[1]).slice(0,6)) {
+        respHtml += `<div class="bar-item" onclick="applyFilter('responsible', '${r}')">
+          <div class="bar-label"><span>${r}</span><span>${c}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${(c/maxResp)*100}%;background:#3498DB"></div></div>
+        </div>`;
+      }
+      document.getElementById('responsibleChart').innerHTML = respHtml || '<p>No data</p>';
+      
+      // Priority chart
+      const priorityCount = { alta:0, media:0, baixa:0 };
+      plans.forEach(p => priorityCount[p.priority]++);
+      let priorityHtml = `<div class="donut-container"><svg width="140" height="140" viewBox="0 0 140 140">`;
+      let pOffset = 0;
+      for (const [p, count] of Object.entries(priorityCount)) {
+        if (count > 0) {
+          const perc = count / total;
+          const circ = 2 * Math.PI * 50;
+          const dash = perc * circ;
+          const off = -pOffset / total * circ;
+          priorityHtml += `<circle cx="70" cy="70" r="50" fill="none" stroke="${priorityColors[p]}" stroke-width="18" 
+                        stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${off}" 
+                        transform="rotate(-90, 70, 70)" style="cursor:pointer"
+                        onclick="applyFilter('priority', '${p}')"/>`;
+          pOffset += count;
+        }
+      }
+      priorityHtml += `<circle cx="70" cy="70" r="38" fill="white"/></svg><div class="legend">`;
+      for (const [p, count] of Object.entries(priorityCount)) {
+        if (count > 0) {
+          priorityHtml += `<div class="legend-item" onclick="applyFilter('priority', '${p}')">
+            <div class="legend-color" style="background:${priorityColors[p]}"></div>
+            <span>${priorityLabels[p]}</span>
+            <strong>${count}</strong>
+          </div>`;
+        }
+      }
+      priorityHtml += `</div></div>`;
+      document.getElementById('priorityChart').innerHTML = priorityHtml;
+    };
+
+    // ==================== FILTROS ====================
+    
+    window.applyFilter = function(type, value) {
+      if (type === 'clear') {
+        activeFilters = { topic: '', status: '', responsible: '', search: '' };
+      } else if (type === 'status') {
+        if (value === 'open') {
+          activeFilters.status = '';
+        } else {
+          activeFilters.status = value;
+        }
+      } else if (type === 'topic') {
+        activeFilters.topic = value;
+      } else if (type === 'responsible') {
+        activeFilters.responsible = value;
+      } else if (type === 'priority') {
+        activeFilters.priority = value;
+      } else if (type === 'evidence') {
+        return;
+      }
+      
+      document.getElementById('topicFilter').value = activeFilters.topic || '';
+      document.getElementById('statusFilter').value = activeFilters.status || '';
+      document.getElementById('responsibleFilter').value = activeFilters.responsible || '';
+      
+      renderTable();
+    };
+
+    // ==================== MODAL - CRUD ====================
+    
+    window.openModal = function(id = null) {
+      editId = id;
+      beforeFiles = [];
+      afterFiles = [];
+      
+      if (id) {
+        const plan = plans.find(p => p.id === id);
+        if (plan) {
+          document.getElementById('modalTitle').textContent = 'Edit Action Plan';
+          document.getElementById('topic').value = plan.topic;
+          document.getElementById('item').value = plan.item;
+          document.getElementById('problem').value = plan.problem;
+          document.getElementById('action').value = plan.action;
+          document.getElementById('responsible').value = plan.responsible;
+          document.getElementById('client').value = plan.client || '';
+          document.getElementById('priority').value = plan.priority;
+          document.getElementById('status').value = plan.status === 'atrasado' ? 'pendente' : plan.status;
+          document.getElementById('deadline').value = plan.deadline;
+          beforeFiles = [...(plan.before || [])];
+          afterFiles = [...(plan.after || [])];
+        }
+      } else {
+        document.getElementById('modalTitle').textContent = 'New Action Plan';
+        document.getElementById('topic').value = '';
+        document.getElementById('item').value = '';
+        document.getElementById('problem').value = '';
+        document.getElementById('action').value = '';
+        document.getElementById('responsible').value = '';
+        document.getElementById('client').value = '';
+        document.getElementById('priority').value = 'media';
+        document.getElementById('status').value = 'pendente';
+        document.getElementById('deadline').value = '';
+      }
+      
+      renderImageLists();
+      document.getElementById('planModal').classList.add('active');
+    };
+    
+    window.closeModal = function() {
+      document.getElementById('planModal').classList.remove('active');
+      editId = null;
+      document.getElementById('formError').style.display = 'none';
+    };
+    
+    function renderImageLists() {
+      const beforeContainer = document.getElementById('beforeList');
+      if (beforeFiles.length === 0) {
+        beforeContainer.innerHTML = '<p style="color:gray;font-size:0.7rem;">No before photos</p>';
+      } else {
+        beforeContainer.innerHTML = beforeFiles.map((f, i) => `
+          <div class="image-card">
+            <img src="${f.data}" onclick="openLightbox('${f.data}')">
+            <button class="remove-img" onclick="event.stopPropagation(); removeBeforeImage(${i})">×</button>
+          </div>
+        `).join('');
+      }
+      
+      const afterContainer = document.getElementById('afterList');
+      if (afterFiles.length === 0) {
+        afterContainer.innerHTML = '<p style="color:gray;font-size:0.7rem;">No after photos</p>';
+      } else {
+        afterContainer.innerHTML = afterFiles.map((f, i) => `
+          <div class="image-card">
+            <img src="${f.data}" onclick="openLightbox('${f.data}')">
+            <button class="remove-img" onclick="event.stopPropagation(); removeAfterImage(${i})">×</button>
+          </div>
+        `).join('');
+      }
+    }
+    
+    window.removeBeforeImage = function(idx) {
+      beforeFiles.splice(idx, 1);
+      renderImageLists();
+    };
+    
+    window.removeAfterImage = function(idx) {
+      afterFiles.splice(idx, 1);
+      renderImageLists();
+    };
+    
+    // File upload handlers
+    document.getElementById('beforeInput').addEventListener('change', function(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          beforeFiles.push({ name: file.name, data: ev.target.result, type: 'image' });
+          renderImageLists();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    });
+    
+    document.getElementById('afterInput').addEventListener('change', function(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          afterFiles.push({ name: file.name, data: ev.target.result, type: 'image' });
+          renderImageLists();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    });
+    
+    window.savePlan = async function() {
+      const topic = document.getElementById('topic').value.trim();
+      const item = document.getElementById('item').value.trim();
+      const problem = document.getElementById('problem').value.trim();
+      const action = document.getElementById('action').value.trim();
+      const responsible = document.getElementById('responsible').value.trim();
+      const deadline = document.getElementById('deadline').value;
+      
+      if (!topic || !item || !problem || !action || !responsible || !deadline) {
+        document.getElementById('formError').textContent = 'Please fill all required fields';
+        document.getElementById('formError').style.display = 'block';
+        return;
+      }
+      
+      const planData = {
+        id: editId || uid(),
+        topic, item, problem, action, responsible,
+        client: document.getElementById('client').value.trim(),
+        priority: document.getElementById('priority').value,
+        status: document.getElementById('status').value,
+        deadline,
+        before: beforeFiles,
+        after: afterFiles,
+        createdAt: editId ? (plans.find(p => p.id === editId)?.createdAt || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
+      };
+      
+      try {
+        await savePlanToFirestore(planData);
+        
+        if (editId) {
+          const idx = plans.findIndex(p => p.id === editId);
+          if (idx !== -1) plans[idx] = planData;
+        } else {
+          plans.push(planData);
+        }
+        
+        closeModal();
+        updateStats();
+        updateFilterOptions();
+        renderTable();
+      } catch (error) {
+        document.getElementById('formError').textContent = 'Erro ao salvar. Tente novamente.';
+        document.getElementById('formError').style.display = 'block';
+      }
+    };
+    
+    window.editPlan = function(id) { openModal(id); };
+    window.deletePlan = function(id) { deleteId = id; document.getElementById('deleteModal').classList.add('active'); };
+    window.closeDeleteModal = function() { document.getElementById('deleteModal').classList.remove('active'); deleteId = null; };
+    window.confirmDelete = async function() {
+      if (deleteId) {
+        try {
+          await deletePlanFromFirestore(deleteId);
+          plans = plans.filter(p => p.id !== deleteId);
+          closeDeleteModal();
+          updateStats();
+          updateFilterOptions();
+          renderTable();
+        } catch (error) {
+          alert('Erro ao deletar plano');
+        }
+      }
+    };
+    
+    // ==================== TABS ====================
+    
+    window.switchTab = function(tab) {
+      const plansPanel = document.getElementById('plansPanel');
+      const analyticsPanel = document.getElementById('analyticsPanel');
+      const plansBtn = document.getElementById('tabPlansBtn');
+      const analyticsBtn = document.getElementById('tabAnalyticsBtn');
+      
+      if (tab === 'plans') {
+        plansPanel.style.display = 'block';
+        analyticsPanel.style.display = 'none';
+        plansBtn.classList.add('active');
+        analyticsBtn.classList.remove('active');
+        renderTable();
+      } else {
+        plansPanel.style.display = 'none';
+        analyticsPanel.style.display = 'block';
+        plansBtn.classList.remove('active');
+        analyticsBtn.classList.add('active');
+        renderCharts();
+      }
+    };
+    
+    // ==================== EVENT LISTENERS ====================
+    
+    document.getElementById('btnNewPlan').addEventListener('click', () => openModal());
+    document.getElementById('tabPlansBtn').addEventListener('click', () => switchTab('plans'));
+    document.getElementById('tabAnalyticsBtn').addEventListener('click', () => switchTab('analytics'));
+    document.getElementById('searchInput').addEventListener('input', () => renderTable());
+    document.getElementById('topicFilter').addEventListener('change', () => { activeFilters.topic = document.getElementById('topicFilter').value; renderTable(); });
+    document.getElementById('statusFilter').addEventListener('change', () => { activeFilters.status = document.getElementById('statusFilter').value; renderTable(); });
+    document.getElementById('responsibleFilter').addEventListener('change', () => { activeFilters.responsible = document.getElementById('responsibleFilter').value; renderTable(); });
+    
+    // Tecla Enter no login
+    document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') loginUser();
+    });
   </script>
   
   <style>
@@ -69,6 +762,162 @@
       background: var(--gray-100);
       color: var(--gray-800);
       line-height: 1.5;
+    }
+
+    /* ==================== LOGIN SCREEN ==================== */
+    #loginScreen {
+      display: none;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 1rem;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 20px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-logo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    .login-logo-icon svg { width: 36px; height: 36px; stroke: white; fill: none; }
+
+    .login-logo h1 { font-size: 1.5rem; color: var(--primary); margin-bottom: 0.25rem; }
+    .login-logo p { color: var(--gray-600); font-size: 0.875rem; }
+
+    .login-form .form-field {
+      margin-bottom: 1rem;
+    }
+
+    .login-form label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 0.25rem;
+    }
+
+    .login-form input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 10px;
+      font-size: 0.875rem;
+      transition: border-color 0.2s;
+    }
+
+    .login-form input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(10, 43, 78, 0.1);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.875rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 0.75rem;
+    }
+
+    .login-btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .login-btn-primary:hover {
+      background: var(--primary-light);
+      transform: translateY(-1px);
+    }
+
+    .login-btn-google {
+      background: white;
+      color: var(--gray-700);
+      border: 1px solid var(--gray-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .login-btn-google:hover {
+      background: var(--gray-50);
+    }
+
+    .login-divider {
+      display: flex;
+      align-items: center;
+      margin: 1.25rem 0;
+      color: var(--gray-500);
+      font-size: 0.75rem;
+    }
+
+    .login-divider::before,
+    .login-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gray-300);
+    }
+
+    .login-divider span {
+      padding: 0 0.75rem;
+    }
+
+    .login-links {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .login-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .login-links a:hover {
+      text-decoration: underline;
+    }
+
+    #authError {
+      color: var(--danger);
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+      text-align: center;
+      display: none;
+      padding: 0.5rem;
+      background: #FDEDEC;
+      border-radius: 8px;
+    }
+
+    /* ==================== APP SCREEN ==================== */
+    #appScreen {
+      display: none;
     }
 
     .app-header {
@@ -112,17 +961,45 @@
     .logo-text h1 { font-size: 1.5rem; font-weight: 700; }
     .logo-text p { font-size: 0.75rem; opacity: 0.8; }
 
-    .sync-status {
+    .header-actions {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      background: rgba(255,255,255,0.1);
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.7rem;
+      gap: 1rem;
     }
-    .sync-status.online { background: var(--accent); }
-    .sync-status.offline { background: var(--danger); }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: white;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .user-email {
+      font-size: 0.7rem;
+      opacity: 0.8;
+    }
 
     .btn-primary {
       background: white;
@@ -140,6 +1017,21 @@
     }
 
     .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+    .btn-logout {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255,255,255,0.3);
+    }
 
     .main-container {
       max-width: 1400px;
@@ -510,7 +1402,7 @@
       cursor: pointer;
     }
 
-    /* Lightbox for full image */
+    /* Lightbox */
     .lightbox {
       position: fixed;
       inset: 0;
@@ -532,36 +1424,57 @@
     }
 
     .empty-state { text-align: center; padding: 2rem; color: var(--gray-500); }
-    
-    .loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-    }
-    .loading-overlay.active { display: flex; }
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid var(--gray-300);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 768px) {
       .header-container, .main-container { padding: 1rem; }
       .form-grid { grid-template-columns: 1fr; }
+      .login-container { padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
 
-<div id="app">
+<!-- ==================== LOGIN SCREEN ==================== -->
+<div id="loginScreen">
+  <div class="login-container">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <h1>Röchling</h1>
+      <p>Action Plans - Before & After Evidence</p>
+    </div>
+    
+    <div class="login-form">
+      <div class="form-field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="seu.email@roechling.com" required>
+      </div>
+      <div class="form-field">
+        <label>Senha</label>
+        <input type="password" id="loginPassword" placeholder="Mínimo 6 caracteres" required>
+      </div>
+      
+      <button class="login-btn login-btn-primary" onclick="loginUser()">Entrar</button>
+      
+      <div class="login-divider"><span>ou</span></div>
+      
+      <button class="login-btn login-btn-google" onclick="loginWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Entrar com Google
+      </button>
+      
+      <div id="authError"></div>
+      
+      <div class="login-links">
+        <p>Não tem conta? <a onclick="registerUser()">Cadastrar-se</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== APP SCREEN ==================== -->
+<div id="appScreen">
   <header class="app-header">
     <div class="header-container">
       <div class="logo-area">
@@ -570,8 +1483,17 @@
         </div>
         <div class="logo-text"><h1>Röchling</h1><p>Before & After Evidence</p></div>
       </div>
-      <div class="sync-status" id="syncStatus">🔄 Syncing...</div>
-      <button class="btn-primary" id="btnNewPlan">+ New Action Plan</button>
+      
+      <div class="header-actions">
+        <button class="btn-primary" id="btnNewPlan">+ New Action Plan</button>
+        <div class="user-info" onclick="logoutUser()" title="Clique para sair">
+          <img id="userAvatar" class="user-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23ddd'/%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23999'/%3E%3C/svg%3E" alt="User">
+          <div class="user-details">
+            <span class="user-name" id="userName">User</span>
+            <span class="user-email" id="userEmail">email@roechling.com</span>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -622,7 +1544,7 @@
           <thead>
             <tr><th>Topic</th><th>Item/Problem</th><th>Action</th><th>Responsible</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Before/After</th><th></th></tr>
           </thead>
-          <tbody id="plansTableBody"><tr><td colspan="9" style="text-align:center;padding:2rem;">Loading from Firebase...</td></tr></tbody>
+          <tbody id="plansTableBody"></tbody>
         </table>
       </div>
     </div>
@@ -637,9 +1559,6 @@
       </div>
     </div>
   </main>
-
-  <!-- Loading -->
-  <div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div></div>
 
   <!-- Plan Modal with Before/After -->
   <div id="planModal" class="modal-overlay">
@@ -699,529 +1618,5 @@
   </div>
 </div>
 
-<script type="module">
-  // Data
-  let plans = [];
-  let editId = null;
-  let deleteId = null;
-  let beforeFiles = [];
-  let afterFiles = [];
-  let activeFilters = { topic: '', status: '', responsible: '', search: '' };
-
-  const statusLabels = { pendente: 'Pending', em_andamento: 'In Progress', concluido: 'Completed', atrasado: 'Overdue' };
-  const priorityLabels = { baixa: 'Low', media: 'Medium', alta: 'High' };
-  const statusColors = { pendente: '#E67E22', em_andamento: '#3498DB', concluido: '#2D7A4B', atrasado: '#C0392B' };
-  const priorityColors = { baixa: '#2D7A4B', media: '#E67E22', alta: '#C0392B' };
-
-  function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
-  function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
-  
-  function updateSyncStatus(success) {
-    const statusDiv = document.getElementById('syncStatus');
-    if (success) {
-      statusDiv.innerHTML = '✅ Synced';
-      statusDiv.className = 'sync-status online';
-    } else {
-      statusDiv.innerHTML = '⚠️ Offline';
-      statusDiv.className = 'sync-status offline';
-    }
-  }
-
-  // Load plans from Firebase
-  async function loadPlans() {
-    showLoading();
-    try {
-      const q = window.query(window.collection(window.db, "actionplans"), window.orderBy("createdAt", "desc"));
-      const querySnapshot = await window.getDocs(q);
-      plans = [];
-      querySnapshot.forEach((doc) => {
-        plans.push({ id: doc.id, ...doc.data() });
-      });
-      updateSyncStatus(true);
-      updateStats();
-      updateFilterOptions();
-      renderTable();
-      renderCharts();
-    } catch (error) {
-      console.error("Error loading plans:", error);
-      updateSyncStatus(false);
-      document.getElementById('plansTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">❌ Error loading from Firebase. Check console.</td></tr>';
-    } finally {
-      hideLoading();
-    }
-  }
-
-  // Save plan to Firebase
-  async function savePlanToFirebase(planData, isEdit) {
-    try {
-      if (isEdit) {
-        const docRef = window.doc(window.db, "actionplans", planData.id);
-        await window.updateDoc(docRef, planData);
-      } else {
-        await window.addDoc(window.collection(window.db, "actionplans"), planData);
-      }
-      updateSyncStatus(true);
-      return true;
-    } catch (error) {
-      console.error("Error saving plan:", error);
-      updateSyncStatus(false);
-      return false;
-    }
-  }
-
-  // Delete plan from Firebase
-  async function deletePlanFromFirebase(id) {
-    try {
-      const docRef = window.doc(window.db, "actionplans", id);
-      await window.deleteDoc(docRef);
-      updateSyncStatus(true);
-      return true;
-    } catch (error) {
-      console.error("Error deleting plan:", error);
-      updateSyncStatus(false);
-      return false;
-    }
-  }
-
-  function updateStatus() {
-    const today = new Date(); today.setHours(0,0,0,0);
-    plans = plans.map(p => {
-      if (p.status !== 'concluido') {
-        const deadline = new Date(p.deadline + 'T00:00:00');
-        if (deadline < today) return { ...p, status: 'atrasado' };
-      }
-      return p;
-    });
-  }
-
-  function updateStats() {
-    updateStatus();
-    const total = plans.length;
-    const open = plans.filter(p => p.status === 'pendente' || p.status === 'em_andamento').length;
-    const completed = plans.filter(p => p.status === 'concluido').length;
-    const overdue = plans.filter(p => p.status === 'atrasado').length;
-    const withEvidence = plans.filter(p => (p.before?.length > 0) || (p.after?.length > 0)).length;
-    
-    document.getElementById('totalPlans').textContent = total;
-    document.getElementById('openPlans').textContent = open;
-    document.getElementById('completedPlans').textContent = completed;
-    document.getElementById('overduePlans').textContent = overdue;
-    document.getElementById('evidenceCount').textContent = withEvidence;
-  }
-
-  function updateFilterOptions() {
-    const topics = [...new Set(plans.map(p => p.topic))];
-    const responsibles = [...new Set(plans.map(p => p.responsible))];
-    
-    document.getElementById('topicFilter').innerHTML = '<option value="">All</option>' + topics.map(t => `<option value="${t}">${t}</option>`).join('');
-    document.getElementById('responsibleFilter').innerHTML = '<option value="">All</option>' + responsibles.map(r => `<option value="${r}">${r}</option>`).join('');
-  }
-
-  function openLightbox(src) {
-    document.getElementById('lightboxImg').src = src;
-    document.getElementById('lightbox').classList.add('active');
-  }
-  function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
-
-  function renderComparison(plan) {
-    const beforeCount = plan.before?.length || 0;
-    const afterCount = plan.after?.length || 0;
-    
-    if (beforeCount === 0 && afterCount === 0) return '<span class="badge-evidence">No evidence</span>';
-    
-    let html = '<div class="comparison-gallery">';
-    if (beforeCount > 0) {
-      html += `<div class="comparison-item" onclick="openLightbox('${plan.before[0].data}')">
-        <div class="comparison-label before">BEFORE</div>
-        <img src="${plan.before[0].data}" class="comparison-thumb">
-        ${beforeCount > 1 ? `<div style="font-size:0.6rem">+${beforeCount-1}</div>` : ''}
-      </div>`;
-    }
-    if (afterCount > 0) {
-      html += `<div class="comparison-item" onclick="openLightbox('${plan.after[0].data}')">
-        <div class="comparison-label after">AFTER</div>
-        <img src="${plan.after[0].data}" class="comparison-thumb">
-        ${afterCount > 1 ? `<div style="font-size:0.6rem">+${afterCount-1}</div>` : ''}
-      </div>`;
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function renderTable() {
-    updateStatus();
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const topic = activeFilters.topic || document.getElementById('topicFilter').value;
-    const status = activeFilters.status || document.getElementById('statusFilter').value;
-    const responsible = activeFilters.responsible || document.getElementById('responsibleFilter').value;
-    
-    let filtered = plans.filter(p => {
-      if (topic && p.topic !== topic) return false;
-      if (status && p.status !== status) return false;
-      if (responsible && p.responsible !== responsible) return false;
-      if (search) {
-        const text = `${p.topic} ${p.item} ${p.problem} ${p.action} ${p.responsible}`.toLowerCase();
-        if (!text.includes(search)) return false;
-      }
-      return true;
-    });
-    
-    const tbody = document.getElementById('plansTableBody');
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;">No plans found</td></tr>';
-      return;
-    }
-    
-    tbody.innerHTML = filtered.map(p => `
-      <tr>
-        <td><span class="badge badge-topic" onclick="applyFilter('topic', '${p.topic}')">${p.topic}</span></td>
-        <td><strong>${p.item}</strong><br><small style="color:gray">${p.problem.substring(0, 50)}${p.problem.length > 50 ? '...' : ''}</small></td>
-        <td style="max-width:200px;">${p.action.substring(0, 60)}${p.action.length > 60 ? '...' : ''}</td>
-        <td><span class="badge badge-progress" onclick="applyFilter('responsible', '${p.responsible}')">${p.responsible}</span></td>
-        <td><span class="badge ${p.priority === 'alta' ? 'badge-high' : (p.priority === 'media' ? 'badge-medium' : 'badge-low')}">${priorityLabels[p.priority]}</span></td>
-        <td>${formatDate(p.deadline)}</td>
-        <td><span class="badge ${p.status === 'pendente' ? 'badge-pending' : (p.status === 'em_andamento' ? 'badge-progress' : (p.status === 'concluido' ? 'badge-done' : 'badge-late'))}" onclick="applyFilter('status', '${p.status}')">${statusLabels[p.status]}</span></td>
-        <td>${renderComparison(p)}</td>
-        <td><div class="action-buttons"><button class="action-btn" onclick="editPlan('${p.id}')">✏️</button><button class="action-btn" onclick="deletePlan('${p.id}')">🗑️</button></div></td>
-      </tr>
-    `).join('');
-  }
-
-  function formatDate(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('pt-BR');
-  }
-
-  function renderCharts() {
-    updateStatus();
-    
-    const statusCount = { pendente:0, em_andamento:0, concluido:0, atrasado:0 };
-    plans.forEach(p => statusCount[p.status]++);
-    const total = plans.length || 1;
-    
-    let statusHtml = `<div class="donut-container"><svg width="160" height="160" viewBox="0 0 160 160">`;
-    let offset = 0;
-    for (const [s, count] of Object.entries(statusCount)) {
-      if (count > 0) {
-        const perc = count / total;
-        const circ = 2 * Math.PI * 60;
-        const dash = perc * circ;
-        const off = -offset / total * circ;
-        statusHtml += `<circle cx="80" cy="80" r="60" fill="none" stroke="${statusColors[s]}" stroke-width="20" 
-                      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${off}" 
-                      transform="rotate(-90, 80, 80)" style="cursor:pointer"
-                      onclick="applyFilter('status', '${s}')"/>`;
-        offset += count;
-      }
-    }
-    statusHtml += `<circle cx="80" cy="80" r="45" fill="white"/></svg><div class="legend">`;
-    for (const [s, count] of Object.entries(statusCount)) {
-      if (count > 0) {
-        statusHtml += `<div class="legend-item" onclick="applyFilter('status', '${s}')">
-          <div class="legend-color" style="background:${statusColors[s]}"></div>
-          <span>${statusLabels[s]}</span>
-          <strong>${count}</strong>
-        </div>`;
-      }
-    }
-    statusHtml += `</div></div>`;
-    document.getElementById('statusChart').innerHTML = statusHtml;
-    
-    const topicCount = {};
-    plans.forEach(p => { topicCount[p.topic] = (topicCount[p.topic] || 0) + 1; });
-    const maxTopic = Math.max(...Object.values(topicCount), 1);
-    let topicHtml = '';
-    for (const [t, c] of Object.entries(topicCount).sort((a,b) => b[1] - a[1])) {
-      topicHtml += `<div class="bar-item" onclick="applyFilter('topic', '${t}')">
-        <div class="bar-label"><span>${t}</span><span>${c}</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${(c/maxTopic)*100}%;background:#667eea"></div></div>
-      </div>`;
-    }
-    document.getElementById('topicChart').innerHTML = topicHtml || '<p>No data</p>';
-    
-    const respCount = {};
-    plans.forEach(p => { respCount[p.responsible] = (respCount[p.responsible] || 0) + 1; });
-    const maxResp = Math.max(...Object.values(respCount), 1);
-    let respHtml = '';
-    for (const [r, c] of Object.entries(respCount).sort((a,b) => b[1] - a[1]).slice(0,6)) {
-      respHtml += `<div class="bar-item" onclick="applyFilter('responsible', '${r}')">
-        <div class="bar-label"><span>${r}</span><span>${c}</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${(c/maxResp)*100}%;background:#3498DB"></div></div>
-      </div>`;
-    }
-    document.getElementById('responsibleChart').innerHTML = respHtml || '<p>No data</p>';
-    
-    const priorityCount = { alta:0, media:0, baixa:0 };
-    plans.forEach(p => priorityCount[p.priority]++);
-    let priorityHtml = `<div class="donut-container"><svg width="140" height="140" viewBox="0 0 140 140">`;
-    let pOffset = 0;
-    for (const [p, count] of Object.entries(priorityCount)) {
-      if (count > 0) {
-        const perc = count / total;
-        const circ = 2 * Math.PI * 50;
-        const dash = perc * circ;
-        const off = -pOffset / total * circ;
-        priorityHtml += `<circle cx="70" cy="70" r="50" fill="none" stroke="${priorityColors[p]}" stroke-width="18" 
-                      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${off}" 
-                      transform="rotate(-90, 70, 70)" style="cursor:pointer"
-                      onclick="applyFilter('priority', '${p}')"/>`;
-        pOffset += count;
-      }
-    }
-    priorityHtml += `<circle cx="70" cy="70" r="38" fill="white"/></svg><div class="legend">`;
-    for (const [p, count] of Object.entries(priorityCount)) {
-      if (count > 0) {
-        priorityHtml += `<div class="legend-item" onclick="applyFilter('priority', '${p}')">
-          <div class="legend-color" style="background:${priorityColors[p]}"></div>
-          <span>${priorityLabels[p]}</span>
-          <strong>${count}</strong>
-        </div>`;
-      }
-    }
-    priorityHtml += `</div></div>`;
-    document.getElementById('priorityChart').innerHTML = priorityHtml;
-  }
-
-  function applyFilter(type, value) {
-    if (type === 'clear') {
-      activeFilters = { topic: '', status: '', responsible: '', search: '' };
-    } else if (type === 'status') {
-      if (value === 'open') {
-        activeFilters.status = '';
-      } else {
-        activeFilters.status = value;
-      }
-    } else if (type === 'topic') {
-      activeFilters.topic = value;
-    } else if (type === 'responsible') {
-      activeFilters.responsible = value;
-    } else if (type === 'priority') {
-      activeFilters.priority = value;
-    } else if (type === 'evidence') {
-      return;
-    }
-    
-    document.getElementById('topicFilter').value = activeFilters.topic || '';
-    document.getElementById('statusFilter').value = activeFilters.status || '';
-    document.getElementById('responsibleFilter').value = activeFilters.responsible || '';
-    
-    renderTable();
-  }
-
-  function openModal(id = null) {
-    editId = id;
-    beforeFiles = [];
-    afterFiles = [];
-    
-    if (id) {
-      const plan = plans.find(p => p.id === id);
-      if (plan) {
-        document.getElementById('modalTitle').textContent = 'Edit Action Plan';
-        document.getElementById('topic').value = plan.topic;
-        document.getElementById('item').value = plan.item;
-        document.getElementById('problem').value = plan.problem;
-        document.getElementById('action').value = plan.action;
-        document.getElementById('responsible').value = plan.responsible;
-        document.getElementById('client').value = plan.client || '';
-        document.getElementById('priority').value = plan.priority;
-        document.getElementById('status').value = plan.status === 'atrasado' ? 'pendente' : plan.status;
-        document.getElementById('deadline').value = plan.deadline;
-        beforeFiles = [...(plan.before || [])];
-        afterFiles = [...(plan.after || [])];
-      }
-    } else {
-      document.getElementById('modalTitle').textContent = 'New Action Plan';
-      document.getElementById('topic').value = '';
-      document.getElementById('item').value = '';
-      document.getElementById('problem').value = '';
-      document.getElementById('action').value = '';
-      document.getElementById('responsible').value = '';
-      document.getElementById('client').value = '';
-      document.getElementById('priority').value = 'media';
-      document.getElementById('status').value = 'pendente';
-      document.getElementById('deadline').value = '';
-    }
-    
-    renderImageLists();
-    document.getElementById('planModal').classList.add('active');
-  }
-  
-  function closeModal() {
-    document.getElementById('planModal').classList.remove('active');
-    editId = null;
-    document.getElementById('formError').style.display = 'none';
-  }
-  
-  function renderImageLists() {
-    const beforeContainer = document.getElementById('beforeList');
-    if (beforeFiles.length === 0) {
-      beforeContainer.innerHTML = '<p style="color:gray;font-size:0.7rem;">No before photos</p>';
-    } else {
-      beforeContainer.innerHTML = beforeFiles.map((f, i) => `
-        <div class="image-card">
-          <img src="${f.data}" onclick="openLightbox('${f.data}')">
-          <button class="remove-img" onclick="event.stopPropagation(); removeBeforeImage(${i})">×</button>
-        </div>
-      `).join('');
-    }
-    
-    const afterContainer = document.getElementById('afterList');
-    if (afterFiles.length === 0) {
-      afterContainer.innerHTML = '<p style="color:gray;font-size:0.7rem;">No after photos</p>';
-    } else {
-      afterContainer.innerHTML = afterFiles.map((f, i) => `
-        <div class="image-card">
-          <img src="${f.data}" onclick="openLightbox('${f.data}')">
-          <button class="remove-img" onclick="event.stopPropagation(); removeAfterImage(${i})">×</button>
-        </div>
-      `).join('');
-    }
-  }
-  
-  function removeBeforeImage(idx) {
-    beforeFiles.splice(idx, 1);
-    renderImageLists();
-  }
-  
-  function removeAfterImage(idx) {
-    afterFiles.splice(idx, 1);
-    renderImageLists();
-  }
-  
-  document.getElementById('beforeInput').addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        beforeFiles.push({ name: file.name, data: ev.target.result, type: 'image' });
-        renderImageLists();
-      };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
-  });
-  
-  document.getElementById('afterInput').addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        afterFiles.push({ name: file.name, data: ev.target.result, type: 'image' });
-        renderImageLists();
-      };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
-  });
-  
-  async function savePlan() {
-    const topic = document.getElementById('topic').value.trim();
-    const item = document.getElementById('item').value.trim();
-    const problem = document.getElementById('problem').value.trim();
-    const action = document.getElementById('action').value.trim();
-    const responsible = document.getElementById('responsible').value.trim();
-    const deadline = document.getElementById('deadline').value;
-    
-    if (!topic || !item || !problem || !action || !responsible || !deadline) {
-      document.getElementById('formError').textContent = 'Please fill all required fields';
-      document.getElementById('formError').style.display = 'block';
-      return;
-    }
-    
-    showLoading();
-    
-    const planData = {
-      topic, item, problem, action, responsible,
-      client: document.getElementById('client').value.trim(),
-      priority: document.getElementById('priority').value,
-      status: document.getElementById('status').value,
-      deadline,
-      before: beforeFiles,
-      after: afterFiles,
-      createdAt: editId ? (plans.find(p => p.id === editId)?.createdAt || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString()
-    };
-    
-    if (editId) {
-      planData.id = editId;
-    }
-    
-    const success = await savePlanToFirebase(planData, !!editId);
-    
-    if (success) {
-      await loadPlans();
-      closeModal();
-    } else {
-      alert("Error saving plan. Check your internet connection.");
-    }
-    
-    hideLoading();
-  }
-  
-  async function editPlan(id) { openModal(id); }
-  async function deletePlan(id) { deleteId = id; document.getElementById('deleteModal').classList.add('active'); }
-  function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); deleteId = null; }
-  
-  async function confirmDelete() {
-    if (deleteId) {
-      showLoading();
-      const success = await deletePlanFromFirebase(deleteId);
-      if (success) {
-        await loadPlans();
-      } else {
-        alert("Error deleting plan. Check your internet connection.");
-      }
-      closeDeleteModal();
-      hideLoading();
-    }
-  }
-  
-  function switchTab(tab) {
-    const plansPanel = document.getElementById('plansPanel');
-    const analyticsPanel = document.getElementById('analyticsPanel');
-    const plansBtn = document.getElementById('tabPlansBtn');
-    const analyticsBtn = document.getElementById('tabAnalyticsBtn');
-    
-    if (tab === 'plans') {
-      plansPanel.style.display = 'block';
-      analyticsPanel.style.display = 'none';
-      plansBtn.classList.add('active');
-      analyticsBtn.classList.remove('active');
-      renderTable();
-    } else {
-      plansPanel.style.display = 'none';
-      analyticsPanel.style.display = 'block';
-      plansBtn.classList.remove('active');
-      analyticsBtn.classList.add('active');
-      renderCharts();
-    }
-  }
-  
-  // Make functions global for onclick handlers
-  window.applyFilter = applyFilter;
-  window.openLightbox = openLightbox;
-  window.closeLightbox = closeLightbox;
-  window.closeModal = closeModal;
-  window.editPlan = editPlan;
-  window.deletePlan = deletePlan;
-  window.removeBeforeImage = removeBeforeImage;
-  window.removeAfterImage = removeAfterImage;
-  window.savePlan = savePlan;
-  window.confirmDelete = confirmDelete;
-  window.closeDeleteModal = closeDeleteModal;
-  window.switchTab = switchTab;
-  
-  // Event listeners
-  document.getElementById('btnNewPlan').addEventListener('click', () => openModal());
-  document.getElementById('tabPlansBtn').addEventListener('click', () => switchTab('plans'));
-  document.getElementById('tabAnalyticsBtn').addEventListener('click', () => switchTab('analytics'));
-  document.getElementById('searchInput').addEventListener('input', () => renderTable());
-  document.getElementById('topicFilter').addEventListener('change', () => { activeFilters.topic = document.getElementById('topicFilter').value; renderTable(); });
-  document.getElementById('statusFilter').addEventListener('change', () => { activeFilters.status = document.getElementById('statusFilter').value; renderTable(); });
-  document.getElementById('responsibleFilter').addEventListener('change', () => { activeFilters.responsible = document.getElementById('responsibleFilter').value; renderTable(); });
-  
-  // Load data from Firebase
-  loadPlans();
-</script>
 </body>
 </html>
